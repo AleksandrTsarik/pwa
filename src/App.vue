@@ -1,16 +1,14 @@
 <template>
-  <div>
-    <TheHeader />
-    <main>
-      <div class="container">
-        <router-view />
-      </div>
-    </main>
-    <TheFooter />
-    <div class="desktop-blocker">
-      Приложение доступно только на мобильных устройствах (ширина экрана до
-      1200px)
+  <TheHeader />
+  <main>
+    <div class="container">
+      <router-view />
     </div>
+  </main>
+  <TheFooter />
+  <div class="desktop-blocker">
+    Приложение доступно только на мобильных устройствах (ширина экрана до
+    1200px)
   </div>
 </template>
 
