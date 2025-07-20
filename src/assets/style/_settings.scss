@@ -68,3 +68,24 @@ html {
   margin: 0 auto;
   padding: 0 15px;
 }
+h1,
+h2 {
+  &.title {
+    font-size: 26px;
+    font-weight: 500;
+    line-height: 110%;
+    font-family: var(--stetica);
+  }
+}
+
+.bg-block {
+  &--white {
+    background-color: rgb(var(--white));
+    border-radius: 16px 16px 0 0;
+    height: 100%;
+    flex-grow: 1;
+  }
+  &--beige {
+    background-color: var(--beige);
+  }
+}

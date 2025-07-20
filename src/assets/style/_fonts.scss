@@ -78,3 +78,92 @@
   font-style: italic;
   font-display: swap;
 }
+
+@font-face {
+  font-family: "Stetica";
+  src: url("../fonts/Stetica-Thin.woff2") format("woff2"),
+    url("../fonts/Stetica-Thin.woff") format("woff");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Stetica";
+  src: url("../fonts/Stetica-Thin-Italic.woff2") format("woff2"),
+    url("../fonts/Stetica-Thin-Italic.woff") format("woff");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Stetica";
+  src: url("../fonts/Stetica-Light.woff2") format("woff2"),
+    url("../fonts/Stetica-Light.woff") format("woff");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Stetica";
+  src: url("../fonts/Stetica-Light-Italic.woff2") format("woff2"),
+    url("../fonts/Stetica-Light-Italic.woff") format("woff");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Stetica";
+  src: url("../fonts/Stetica-Regular.woff2") format("woff2"),
+    url("../fonts/Stetica-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Stetica";
+  src: url("../fonts/Stetica-Italic.woff2") format("woff2"),
+    url("../fonts/Stetica-Italic.woff") format("woff");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Stetica";
+  src: url("../fonts/Stetica-Medium.woff2") format("woff2"),
+    url("../fonts/Stetica-Medium.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Stetica";
+  src: url("../fonts/Stetica-Medium-Italic.woff2") format("woff2"),
+    url("../fonts/Stetica-Medium-Italic.woff") format("woff");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Stetica";
+  src: url("../fonts/Stetica-Bold.woff2") format("woff2"),
+    url("../fonts/Stetica-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Stetica";
+  src: url("../fonts/Stetica-Bold-Italic.woff2") format("woff2"),
+    url("../fonts/Stetica-Bold-Italic.woff") format("woff");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Stetica";
+  src: url("../fonts/Stetica-Black.woff2") format("woff2"),
+    url("../fonts/Stetica-Black.woff") format("woff");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}

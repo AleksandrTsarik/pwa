@@ -1,6 +1,6 @@
 <template>
-  <h1>Главная страница</h1>
-  <p>Это стартовая страница приложения.</p>
+  <p>Вы не авторизованы!!!</p>
+  <router-link to="/log-in">login</router-link>
 </template>
 
 <script></script>
