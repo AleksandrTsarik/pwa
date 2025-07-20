@@ -3,11 +3,11 @@
   <main>
     <router-view />
   </main>
-  <TheFooter />
-  <div class="desktop-blocker">
+  <!-- <TheFooter /> -->
+  <!-- <div class="desktop-blocker">
     Приложение доступно только на мобильных устройствах (ширина экрана до
     1200px)
-  </div>
+  </div> -->
 </template>
 
 <script setup>

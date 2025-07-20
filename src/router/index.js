@@ -12,6 +12,10 @@ const routes = [
   {
     path: '/log-in',
     component: () => import('../pages/auth/log-in.vue')
+  },
+  {
+    path: '/recovery',
+    component: () => import('../pages/auth/recovery.vue')
   }
 ]
 
