@@ -1,6 +1,6 @@
 <template>
   <div class="bg-block--beige recovery">
-    <div class="bg-block__haed">
+    <div class="password__haed">
       <div class="recovery__container">
         <router-link to="/log-in" class="recovery__back">
           <Svg type="arrowBack"></Svg>
@@ -16,12 +16,12 @@
     </div>
     <div class="recovery__body bg-block--white">
       <div class="recovery__container">
-        <form>
+        <form @submit="onSubmit">
           <div class="recovery-form__inputs">
             <Input v-model="email" name="Email" type="text" />
           </div>
           <div class="recovery-form__btns">
-            <router-link to="" class="btn btn-primary">Продолжить</router-link>
+            <Button class="btn btn-primary" label="Продолжить"></Button>
             <router-link to="/log-in" class="btn btn-transparent">
               Назад
             </router-link>
@@ -30,24 +30,37 @@
       </div>
     </div>
   </div>
+  <ModalEmail v-if="showModalEmail" @close="showModalEmail = false" />
 </template>
 
 <script>
 import Svg from "../../components/TheSvg.vue";
 import Input from "../../components/UI/TheInput.vue";
+import Button from "../../components/UI/TheButton.vue";
+import ModalEmail from "../../components/modal/modal-email.vue";
 export default {
   components: {
     Svg,
     Input,
+    Button,
+    ModalEmail,
   },
   data() {
     return {
       email: "",
+      showModalEmail: false,
     };
   },
   methods: {
     isEmailValid() {
       return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(this.email);
+    },
+    async onSubmit(e) {
+      e.preventDefault();
+      if (!this.isEmailValid()) return;
+      // запрос на сервер
+      // await api.recovery(this.email);
+      this.showModalEmail = true;
     },
   },
 };

@@ -155,7 +155,11 @@
                 >
                   <div class="reg-form-logIn__inputs">
                     <Input v-model="email" name="Email" type="text" />
-                    <Input v-model="password" type="text" :name="'Пароль'" />
+                    <Input
+                      v-model="password"
+                      type="password"
+                      :name="'Пароль'"
+                    />
                   </div>
                   <div class="reg-form-logIn__btns">
                     <Button label="Войти" class="btn-primary" />

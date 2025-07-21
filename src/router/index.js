@@ -13,6 +13,10 @@ const routes = [
   {
     path: '/recovery',
     component: () => import('../pages/auth/recovery.vue')
+  },
+  {
+    path: '/password',
+    component: () => import('../pages/auth/password.vue')
   }
 ]
 
@@ -21,15 +25,16 @@ const router = createRouter({
   routes,
 })
 
+const publicPaths = ['/log-in', '/recovery', '/password'];
 router.beforeEach((to, from, next) => {
   const auth = useAuthStore();
 
-  // Если неавторизован
-  if (!auth.token && to.path !== '/log-in' && to.path !== '/recovery') {
+  // Разрешаем доступ к публичным страницам для неавторизованных
+  if (!auth.token && !publicPaths.includes(to.path)) {
     return next('/log-in');
   }
 
-  // Если авторизован
+  // Если авторизован и пытается попасть на логин или recovery — редирект на главную
   if (auth.token && (to.path === '/log-in' || to.path === '/recovery')) {
     return next('/');
   }
