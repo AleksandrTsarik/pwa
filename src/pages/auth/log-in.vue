@@ -1,7 +1,7 @@
 <template>
   <div class="reg bg-block--beige">
     <div class="reg-entrance">
-      <div class="reg-entrance__head">
+      <div class="reg-entrance__head block-head">
         <div class="reg-entrance__container">
           <div class="reg-entrance__logo">
             <router-link to="/">
@@ -125,7 +125,7 @@
           </div>
         </div>
       </div>
-      <div class="reg-entrance__body bg-block--white">
+      <div class="reg-entrance__body bg-block--white block-body">
         <div class="reg-entrance__container">
           <h2 class="title reg-entrance__title">Вход в приложение</h2>
           <div class="reg-form-wrap">
@@ -237,10 +237,9 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 60px 0 20px;
   }
   &__title {
-    padding: 30px 0 20px;
+    padding: 0 0 20px;
   }
 }
 .reg-form-wrap {

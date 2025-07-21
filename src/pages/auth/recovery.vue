@@ -1,6 +1,6 @@
 <template>
   <div class="bg-block--beige recovery">
-    <div class="password__haed">
+    <div class="password__haed block-head">
       <div class="recovery__container">
         <router-link to="/log-in" class="recovery__back">
           <Svg type="arrowBack"></Svg>
@@ -14,7 +14,7 @@
         </div>
       </div>
     </div>
-    <div class="recovery__body bg-block--white">
+    <div class="recovery__body bg-block--white block-body">
       <div class="recovery__container">
         <form @submit="onSubmit">
           <div class="recovery-form__inputs">
@@ -71,13 +71,11 @@ export default {
   &__head {
   }
   &__body {
-    padding: 30px 0;
   }
   &__back {
-    margin: 40px 0 24px;
+    margin: 0 0 24px;
   }
   &__info {
-    margin: 0 0 30px;
   }
   &__title {
     margin-bottom: 15px;

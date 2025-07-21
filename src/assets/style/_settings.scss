@@ -89,3 +89,13 @@ h2 {
     background-color: var(--beige);
   }
 }
+
+.block-head {
+  padding: 64px 0 30px;
+  h2 {
+    margin-bottom: 12px;
+  }
+}
+.block-body {
+  padding: 30px 0;
+}

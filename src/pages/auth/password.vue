@@ -1,6 +1,6 @@
 <template>
   <div class="bg-block--beige password">
-    <div class="password__head">
+    <div class="password__head block-head">
       <div class="password__container">
         <div class="password__info">
           <h2 class="title password__title">Создание пароля</h2>
@@ -36,7 +36,7 @@
         </div>
       </div>
     </div>
-    <div class="password__body bg-block--white">
+    <div class="password__body bg-block--white block-body">
       <div class="password__container">
         <form @submit="onSubmit" class="password-form">
           <div class="password-form__inputs">
@@ -128,7 +128,7 @@ export default {
     padding: 30px 0;
   }
   &__title {
-    padding: 30px 0 20px;
+    padding: 0 0 0;
   }
 }
 .password-form {
