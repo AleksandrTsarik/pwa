@@ -27,7 +27,7 @@ export default {
   },
   methods: {
     goToIndex() {
-      this.$router.push("/");
+      this.$router.push("/activation");
     },
   },
 };

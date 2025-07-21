@@ -17,6 +17,10 @@ const routes = [
   {
     path: '/password',
     component: () => import('../pages/auth/password.vue')
+  },
+  {
+    path: '/activation',
+    component: () => import('../pages/auth/activation.vue')
   }
 ]
 
