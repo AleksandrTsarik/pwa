@@ -9,6 +9,10 @@
       @blur="isFocused = false"
       :id="id"
       :placeholder="placeholder"
+      :class="{
+        'not-empty': modelValue && modelValue.length > 0,
+        'is-focused': isFocused,
+      }"
     />
     <input
       v-else
@@ -68,6 +72,7 @@ export default {
   display: flex;
   align-items: center;
   width: 100%;
+  margin-bottom: 10px;
 
   input {
     width: 100%;
@@ -79,10 +84,12 @@ export default {
     outline: none;
     height: 56px;
     transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    padding: 12px 20px;
-    &:focus {
-      background: rgb(var(--white));
-      border: 1px solid var(--darkSecondary);
+    padding: 15px 20px;
+    &.is-focused,
+    &.not-empty {
+      background: #fff;
+      border-color: var(--darkSecondary);
+      padding: 15px 20px 5px;
     }
   }
 
@@ -96,7 +103,6 @@ export default {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     background: #e5f0ff;
     padding: 0 4px;
-
     &.active {
       top: 4px;
       font-size: 12px;

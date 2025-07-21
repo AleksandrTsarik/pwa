@@ -154,8 +154,8 @@
                   class="reg-form__log-in reg-form-logIn reg-form-grow"
                 >
                   <div class="reg-form-logIn__inputs">
-                    <Input type="text" :name="'Email'" />
-                    <Input type="text" :name="'Пароль'" />
+                    <Input v-model="email" name="Email" type="text" />
+                    <Input v-model="password" type="text" :name="'Пароль'" />
                   </div>
                   <div class="reg-form-logIn__btns">
                     <Button label="Войти" class="btn-primary" />
@@ -201,6 +201,8 @@ export default {
   data() {
     return {
       isLogin: true,
+      email: "",
+      password: "",
     };
   },
 };
