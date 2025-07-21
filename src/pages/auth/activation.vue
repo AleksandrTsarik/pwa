@@ -44,7 +44,11 @@
             />
           </div>
           <div class="activation-form__more">
-            <Button label="Продолжить" class="btn-primary" />
+            <Button
+              label="Продолжить"
+              class="btn-primary"
+              @click.prevent="applyCrop"
+            />
           </div>
         </form>
         <div v-if="showCropper" class="modal-cropper">
@@ -66,72 +70,23 @@
             <div class="modal-cropper__title">Миниатюра</div>
           </div>
           <div class="modal-cropper__body">
-            <div class="modal-cropper__overlay"></div>
             <div
-              class="cropper-preview-wrap"
-              @wheel="onCropperWheel"
-              ref="cropperWrap"
+              class="custom-cropper"
+              ref="customCropper"
+              @mousedown="startDrag"
+              @mousemove="onDrag"
+              @mouseup="stopDrag"
+              @mouseleave="stopDrag"
+              @touchstart="startDrag"
+              @touchmove="onDrag"
+              @touchend="stopDrag"
             >
-              <div
-                v-if="showCropper"
-                class="cropper-preview-wrap__overlay"
-                :style="{ zIndex: 99 }"
-              >
-                <svg
-                  :width="overlayWidth"
-                  :height="overlayHeight"
-                  style="display: block; width: 100%; height: 100%"
-                >
-                  <defs>
-                    <mask id="avatar-mask">
-                      <rect
-                        :width="overlayWidth"
-                        :height="overlayHeight"
-                        fill="white"
-                      />
-                      <circle :cx="cursorX" :cy="cursorY" r="95" fill="black" />
-                    </mask>
-                  </defs>
-                  <rect
-                    :width="overlayWidth"
-                    :height="overlayHeight"
-                    fill="rgba(0,0,0,0.7)"
-                    :mask="'url(#avatar-mask)'"
-                  />
-                </svg>
-              </div>
-              <div
-                v-if="showCropper"
-                class="cropper-preview-wrap__cursor"
-                :style="cursorStyle"
-                @mousedown.stop.prevent="onDragStart"
-                @touchstart.stop.prevent="onDragStart"
-              ></div>
-              <Cropper
-                ref="setCropperRef"
-                :src="selectedImage"
-                :stencil-props="{
-                  aspectRatio: 1,
-                  circular: true,
-                  width: 190,
-                  height: 190,
-                  movable: true,
-                  resizable: false,
-                  handlers: false,
-                }"
-                :stencil-component="null"
-                :background-props="{ visible: false }"
-                :transitions="false"
-                :overlay="false"
-                tabindex="0"
-                @change="onCropChange"
-                @ready="onCropperReady"
-              />
-              <img
-                v-if="selectedImage"
-                :src="selectedImage"
-                class="debug-preview"
-              />
+              <canvas
+                ref="canvas"
+                :width="canvasSize"
+                :height="canvasSize"
+                class="custom-cropper__canvas"
+              ></canvas>
             </div>
           </div>
           <div class="modal-cropper__footer">
@@ -145,45 +100,22 @@
 
 <script>
 import Button from "../../components/UI/TheButton.vue";
-import { Cropper } from "vue-advanced-cropper";
 export default {
-  components: {
-    Button,
-    Cropper,
-  },
+  components: { Button },
   data() {
     return {
       avatarUrl: null,
       showCropper: false,
       selectedImage: null,
-      cropResult: null,
-      cropperRef: null, // ссылка на cropper
-      cursorX: null,
-      cursorY: null,
+      image: null,
+      canvasSize: 320,
+      cropRadius: 95,
+      cropX: 160,
+      cropY: 160,
       dragging: false,
       dragOffsetX: 0,
       dragOffsetY: 0,
-      wrapRect: null,
-      overlayWidth: 400,
-      overlayHeight: 400,
     };
-  },
-  computed: {
-    cursorStyle() {
-      return {
-        left: (this.cursorX !== null ? this.cursorX : 0) + "px",
-        top: (this.cursorY !== null ? this.cursorY : 0) + "px",
-        cursor: this.dragging ? "grabbing" : "grab",
-      };
-    },
-  },
-  watch: {
-    cursorX(val) {
-      this.updateOverlayPosition();
-    },
-    cursorY(val) {
-      this.updateOverlayPosition();
-    },
   },
   methods: {
     openFileDialog() {
@@ -196,175 +128,141 @@ export default {
         reader.onload = (event) => {
           this.selectedImage = event.target.result;
           this.showCropper = true;
-          // Не центрируем здесь! Только после onReady cropper
+          this.$nextTick(() => {
+            this.loadImage();
+          });
         };
         reader.readAsDataURL(file);
       }
     },
-    onCropChange({ canvas }) {
-      this.cropResult = canvas ? canvas.toDataURL() : null;
+    loadImage() {
+      const img = new window.Image();
+      img.onload = () => {
+        this.image = img;
+        this.drawCanvas();
+      };
+      img.src = this.selectedImage;
     },
-    applyCrop() {
-      // Перед сохранением двигаем cropper в нужную позицию
-      this.moveCropperToCursor();
-      this.$nextTick(() => {
-        let canvas = null;
-        if (this.cropperRef && this.cropperRef.getResult) {
-          const result = this.cropperRef.getResult();
-          if (result && result.canvas) {
-            canvas = result.canvas;
-          }
-        }
-        this.avatarUrl = canvas ? canvas.toDataURL() : this.cropResult;
-        this.showCropper = false;
-        this.cursorX = null;
-        this.cursorY = null;
-        this.dragging = false;
-        this.removeGlobalDragListeners();
-      });
+    drawCanvas() {
+      const canvas = this.$refs.canvas;
+      if (!canvas || !this.image) return;
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, this.canvasSize, this.canvasSize);
+      // Нарисовать фото по центру
+      const scale = Math.max(
+        this.canvasSize / this.image.width,
+        this.canvasSize / this.image.height
+      );
+      const imgW = this.image.width * scale;
+      const imgH = this.image.height * scale;
+      const imgX = (this.canvasSize - imgW) / 2;
+      const imgY = (this.canvasSize - imgH) / 2;
+      ctx.drawImage(this.image, imgX, imgY, imgW, imgH);
+      // Overlay
+      ctx.save();
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = "#000";
+      ctx.beginPath();
+      ctx.arc(this.cropX, this.cropY, this.cropRadius, 0, Math.PI * 2);
+      ctx.rect(this.canvasSize, 0, -this.canvasSize, this.canvasSize);
+      ctx.closePath();
+      ctx.fill("evenodd");
+      ctx.restore();
+      // Круглая рамка
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(this.cropX, this.cropY, this.cropRadius, 0, Math.PI * 2);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "#42b883";
+      ctx.stroke();
+      ctx.restore();
     },
-    onCropperWheel(e) {
-      if (this.cropperRef && this.cropperRef.zoom) {
-        e.preventDefault();
-        const delta = e.deltaY < 0 ? 0.05 : -0.05;
-        this.cropperRef.zoom(delta);
-      }
-    },
-    onCursorDown(e) {
-      if (!this.showCropper) return;
+    startDrag(e) {
       let x, y;
       if (e.touches && e.touches.length) {
-        const rect = e.target.parentElement.getBoundingClientRect();
+        const rect = this.$refs.customCropper.getBoundingClientRect();
         x = e.touches[0].clientX - rect.left;
         y = e.touches[0].clientY - rect.top;
       } else {
-        const rect = e.target.parentElement.getBoundingClientRect();
+        const rect = this.$refs.customCropper.getBoundingClientRect();
         x = e.clientX - rect.left;
         y = e.clientY - rect.top;
       }
-      const dx = x - this.cursorX;
-      const dy = y - this.cursorY;
-      if (Math.sqrt(dx * dx + dy * dy) <= 95) {
+      const dx = x - this.cropX;
+      const dy = y - this.cropY;
+      if (Math.sqrt(dx * dx + dy * dy) <= this.cropRadius) {
         this.dragging = true;
-        this.dragOffsetX = x - this.cursorX;
-        this.dragOffsetY = y - this.cursorY;
-        document.body.style.userSelect = "none";
-        window.addEventListener("mousemove", this.onGlobalCursorMove);
-        window.addEventListener("touchmove", this.onGlobalCursorMove, {
-          passive: false,
-        });
-        window.addEventListener("mouseup", this.onCursorUp);
-        window.addEventListener("touchend", this.onCursorUp);
-        window.addEventListener("touchcancel", this.onCursorUp);
+        this.dragOffsetX = dx;
+        this.dragOffsetY = dy;
       }
     },
-    onGlobalCursorMove(e) {
-      if (!this.showCropper || !this.dragging) return;
-      let x, y, wrap;
-      wrap = this.$el.querySelector(".cropper-preview-wrap");
-      if (!wrap) return;
+    onDrag(e) {
+      if (!this.dragging) return;
+      let x, y;
       if (e.touches && e.touches.length) {
-        const rect = wrap.getBoundingClientRect();
+        const rect = this.$refs.customCropper.getBoundingClientRect();
         x = e.touches[0].clientX - rect.left;
         y = e.touches[0].clientY - rect.top;
       } else {
-        const rect = wrap.getBoundingClientRect();
+        const rect = this.$refs.customCropper.getBoundingClientRect();
         x = e.clientX - rect.left;
         y = e.clientY - rect.top;
       }
-      // Ограничиваем движение курсора внутри области
-      const min = 95;
-      const maxX = wrap.offsetWidth - 95;
-      const maxY = wrap.offsetHeight - 95;
-      this.cursorX = Math.max(min, Math.min(x - this.dragOffsetX, maxX));
-      this.cursorY = Math.max(min, Math.min(y - this.dragOffsetY, maxY));
-      this.moveCropperToCursor();
+      // Ограничить круг в пределах canvas
+      const min = this.cropRadius;
+      const max = this.canvasSize - this.cropRadius;
+      this.cropX = Math.max(min, Math.min(x - this.dragOffsetX, max));
+      this.cropY = Math.max(min, Math.min(y - this.dragOffsetY, max));
+      this.drawCanvas();
     },
-    onCursorUp() {
+    stopDrag() {
       this.dragging = false;
-      document.body.style.userSelect = "";
-      this.removeGlobalDragListeners();
     },
-    removeGlobalDragListeners() {
-      window.removeEventListener("mousemove", this.onGlobalCursorMove);
-      window.removeEventListener("touchmove", this.onGlobalCursorMove);
-      window.removeEventListener("mouseup", this.onCursorUp);
-      window.removeEventListener("touchend", this.onCursorUp);
-      window.removeEventListener("touchcancel", this.onCursorUp);
+    applyCrop() {
+      // Вырезать область круга из исходного изображения
+      if (!this.image) return;
+      const scale = Math.max(
+        this.canvasSize / this.image.width,
+        this.canvasSize / this.image.height
+      );
+      const imgW = this.image.width * scale;
+      const imgH = this.image.height * scale;
+      const imgX = (this.canvasSize - imgW) / 2;
+      const imgY = (this.canvasSize - imgH) / 2;
+      // Координаты центра круга в исходном изображении
+      const centerX = (this.cropX - imgX) / scale;
+      const centerY = (this.cropY - imgY) / scale;
+      // Создать временный canvas для аватарки
+      const avatarCanvas = document.createElement("canvas");
+      avatarCanvas.width = this.cropRadius * 2;
+      avatarCanvas.height = this.cropRadius * 2;
+      const avatarCtx = avatarCanvas.getContext("2d");
+      avatarCtx.save();
+      avatarCtx.beginPath();
+      avatarCtx.arc(
+        this.cropRadius,
+        this.cropRadius,
+        this.cropRadius,
+        0,
+        Math.PI * 2
+      );
+      avatarCtx.closePath();
+      avatarCtx.clip();
+      avatarCtx.drawImage(
+        this.image,
+        centerX - this.cropRadius / scale,
+        centerY - this.cropRadius / scale,
+        (this.cropRadius * 2) / scale,
+        (this.cropRadius * 2) / scale,
+        0,
+        0,
+        this.cropRadius * 2,
+        this.cropRadius * 2
+      );
+      avatarCtx.restore();
+      this.avatarUrl = avatarCanvas.toDataURL();
+      this.showCropper = false;
     },
-    onDragStart(e) {
-      e.preventDefault();
-      this.onCursorDown(e);
-    },
-    moveCropperToCursor() {
-      if (
-        this.cropperRef &&
-        this.cropperRef.move &&
-        this.cropperRef.coordinatesToImage &&
-        this.cursorX !== null &&
-        this.cursorY !== null &&
-        this.$refs.cropperWrap &&
-        this.cropperRef.$el
-      ) {
-        // Переводим координаты центра круга из cropper-preview-wrap в cropper-контейнер
-        const wrapRect = this.$refs.cropperWrap.getBoundingClientRect();
-        const cropperRect = this.cropperRef.$el.getBoundingClientRect();
-        const xInCropper = this.cursorX + (wrapRect.left - cropperRect.left);
-        const yInCropper = this.cursorY + (wrapRect.top - cropperRect.top);
-        const imgCoords = this.cropperRef.coordinatesToImage({
-          x: xInCropper,
-          y: yInCropper,
-        });
-        // Поправка: если move ожидает левый верхний угол, а не центр
-        let moveX = imgCoords.x;
-        let moveY = imgCoords.y;
-        if (this.cropperRef.getCoordinates) {
-          const coords = this.cropperRef.getCoordinates();
-          if (coords && coords.width && coords.height) {
-            moveX = imgCoords.x - coords.width / 2;
-            moveY = imgCoords.y - coords.height / 2;
-            // Отладка:
-            console.log(
-              "Курсор:",
-              this.cursorX,
-              this.cursorY,
-              "img:",
-              imgCoords,
-              "cropper:",
-              coords
-            );
-          }
-        }
-        this.cropperRef.move(moveX, moveY);
-      }
-    },
-    onCropperReady() {
-      // Центрируем курсор и cropper только после полной загрузки изображения
-      this.$nextTick(() => {
-        requestAnimationFrame(() => {
-          const wrap = this.$el.querySelector(".cropper-preview-wrap");
-          if (wrap) {
-            this.wrapRect = wrap.getBoundingClientRect();
-            this.cursorX = wrap.offsetWidth / 2;
-            this.cursorY = wrap.offsetHeight / 2;
-            this.moveCropperToCursor();
-          }
-        });
-      });
-    },
-    setCropperRef(ref) {
-      this.cropperRef = ref;
-    },
-    updateOverlayPosition() {
-      if (this.$refs.cropperWrap) {
-        // Обновляем размеры overlay
-        this.overlayWidth = this.$refs.cropperWrap.offsetWidth;
-        this.overlayHeight = this.$refs.cropperWrap.offsetHeight;
-      }
-    },
-  },
-  beforeDestroy() {
-    this.removeGlobalDragListeners();
   },
 };
 </script>
@@ -403,29 +301,11 @@ export default {
   background: var(--text);
   display: flex;
   flex-direction: column;
-
-  .vue-advanced-cropper {
-    width: 100%;
-    max-width: 100vw;
-    max-height: 100vh;
-  }
-
   &__header {
     display: flex;
     align-items: center;
     padding: 16px;
     border-bottom: 1px solid #eee;
-  }
-  &__back {
-    background: none;
-    border: none;
-    margin-right: 16px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    svg {
-      display: block;
-    }
   }
   &__body {
     flex: 1 1 auto;
@@ -436,60 +316,20 @@ export default {
     padding: 24px 0;
     overflow: hidden;
     position: relative;
-    .cropper-preview-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-      outline: none;
+    .custom-cropper {
       position: relative;
-      &__overlay {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-      }
-      &__cursor {
-        position: absolute;
-        width: 190px;
-        height: 190px;
-        border: 2px solid #42b883;
-        border-radius: 50%;
-        pointer-events: auto;
-        z-index: 100;
-        box-sizing: border-box;
-        background: transparent;
-        transform: translate(-50%, -50%);
-        touch-action: none;
-      }
-      &:focus {
-        cursor: none;
-      }
-      &:focus::after {
+      width: 320px;
+      height: 320px;
+      margin: 0 auto;
+      &__canvas {
+        width: 320px;
+        height: 320px;
         display: block;
+        background: #222;
+        border-radius: 12px;
+        box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12);
       }
     }
-    .debug-preview {
-      // max-width: 100vh;
-      // max-height: 100vw;
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-    }
-  }
-  &__overlay {
-    position: absolute;
-    background-color: rgba(var(--black), 0.2);
-    display: block;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 50;
   }
   &__footer {
     padding: 16px;
@@ -503,8 +343,5 @@ export default {
     font-family: var(--stetica);
     color: rgb(var(--white));
   }
-}
-.vue-advanced-cropper__overlay {
-  background: transparent !important;
 }
 </style>
