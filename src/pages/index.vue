@@ -1,35 +1,41 @@
 <template>
-  <router-link to="/log-in">login</router-link>
-  <Card :cardOptions="cardTariff" />
-  <Card :cardOptions="cardTariff2" />
-  <Card :cardOptions="cardTariff3" />
-
-  <NavMenu />
+  <div class="navm-menu">
+    <!-- контент страницы -->
+    <div v-if="selectedTab === 0">
+      <Tab1 />
+    </div>
+    <div v-else-if="selectedTab === 1">
+      <Tab2 />
+    </div>
+    <div v-else-if="selectedTab === 2">
+      <Tab3 />
+    </div>
+    <div v-else-if="selectedTab === 3">
+      <Tab4 />
+    </div>
+    <!-- табы -->
+    <TheNav @tab-change="updateTab" />
+  </div>
 </template>
 
 <script>
-import Card from "../components/TheCard.vue";
-import NavMenu from "../components/TheNav.vue";
+import TheNav from "../components/TheNav.vue";
+import Tab1 from "../pages/tabs/map.vue";
+import Tab2 from "../pages/tabs/qr.vue";
+import Tab3 from "../pages/tabs/profile.vue";
+import Tab4 from "../pages/tabs/question.vue";
+
 export default {
-  components: {
-    Card,
-    NavMenu,
-  },
+  components: { TheNav, Tab1, Tab2, Tab3, Tab4 },
   data() {
     return {
-      cardTariff: {
-        cardTtariff: "gold",
-        tariff: "326 мест",
-      },
-      cardTariff2: {
-        cardTtariff: "silver",
-        tariff: "36 мест",
-      },
-      cardTariff3: {
-        cardTtariff: "black",
-        tariff: "32 мест",
-      },
+      selectedTab: 0,
     };
+  },
+  methods: {
+    updateTab(tab) {
+      this.selectedTab = this.tabs.indexOf(tab);
+    },
   },
 };
 </script>
