@@ -53,7 +53,7 @@ export default {
     avatarUrl(newVal) {
       if (newVal) {
         localStorage.setItem("profilePhoto", newVal);
-        console.log("Saved to storage:", newVal);
+        // console.log("Saved to storage:", newVal);
       }
     },
   },
@@ -65,7 +65,7 @@ export default {
   methods: {
     continueWithPhoto() {
       if (this.avatarUrl) {
-        console.log("Фото выбрано:", this.avatarUrl);
+        console.log("Фото выбрано:");
       } else {
         console.log("Фото не выбрано");
       }

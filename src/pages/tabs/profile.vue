@@ -85,7 +85,6 @@ export default {
   },
   mounted() {
     this.profilePhoto = localStorage.getItem("profilePhoto");
-    console.log("Loaded from storage:", this.profilePhoto);
   },
   watch: {
     $route() {
