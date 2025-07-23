@@ -2,16 +2,16 @@
   <div class="navm-menu">
     <!-- контент страницы -->
     <div v-if="selectedTab === 0">
-      <Tab1 />
+      <Map />
     </div>
     <div v-else-if="selectedTab === 1">
-      <Tab2 />
+      <QrCode />
     </div>
     <div v-else-if="selectedTab === 2">
-      <Tab3 />
+      <Profile />
     </div>
     <div v-else-if="selectedTab === 3">
-      <Tab4 />
+      <Qusetions />
     </div>
     <!-- табы -->
     <TheNav @tab-change="updateTab" />
@@ -20,13 +20,13 @@
 
 <script>
 import TheNav from "../components/TheNav.vue";
-import Tab1 from "../pages/tabs/map.vue";
-import Tab2 from "../pages/tabs/qr.vue";
-import Tab3 from "../pages/tabs/profile.vue";
-import Tab4 from "../pages/tabs/question.vue";
+import Map from "../pages/tabs/map.vue";
+import QrCode from "../pages/tabs/qr.vue";
+import Profile from "../pages/tabs/profile.vue";
+import Qusetions from "../pages/tabs/question.vue";
 
 export default {
-  components: { TheNav, Tab1, Tab2, Tab3, Tab4 },
+  components: { TheNav, Map, QrCode, Profile, Qusetions },
   data() {
     return {
       selectedTab: 0,
@@ -34,7 +34,7 @@ export default {
   },
   methods: {
     updateTab(tab) {
-      this.selectedTab = this.tabs.indexOf(tab);
+      this.selectedTab = tab;
     },
   },
 };
