@@ -1,6 +1,6 @@
 <template>
   <router-link to="/log-in">login</router-link>
-  <Card />
+  <Card :cardOptions="cardTariff" />
 </template>
 
 <script>
@@ -10,7 +10,12 @@ export default {
     Card,
   },
   data() {
-    return {};
+    return {
+      cardTariff: {
+        cardTtariff: "gold",
+        tariff: "326 мест",
+      },
+    };
   },
 };
 </script>
