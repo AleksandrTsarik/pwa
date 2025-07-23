@@ -45,13 +45,12 @@ export default {
   },
   methods: {
     continueWithPhoto() {
-      // Здесь логика для продолжения с выбранным фото
       if (this.avatarUrl) {
         console.log("Фото выбрано:", this.avatarUrl);
-        // this.$router.push("/");
       } else {
-        this.$router.push("/");
+        console.log("Фото не выбрано");
       }
+      this.$router.push("/");
     },
   },
 };

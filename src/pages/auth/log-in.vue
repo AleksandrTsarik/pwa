@@ -176,7 +176,7 @@
                     сотрудников.
                   </p>
                   <div class="reg-form-logIn__btns">
-                    <Button label="Войти" class="btn-primary" />
+                    <Button label="Напишите нам" class="btn-primary" />
                     <router-link to="/recovery" class="btn btn-transparent"
                       >Забыли пароль?</router-link
                     >
