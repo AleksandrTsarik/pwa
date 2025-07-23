@@ -17,7 +17,13 @@
       <div class="activation__container">
         <form class="activation-form">
           <div class="activation-form__photo">
-            <ModalPhoto v-model="avatarUrl" />
+            <ModalPhoto v-model="avatarUrl" :disabled="isPhotoSet" />
+            <div
+              v-if="isPhotoSet"
+              style="color: #888; font-size: 14px; margin-top: 8px"
+            >
+              Фото уже выбрано и изменить нельзя
+            </div>
           </div>
           <div class="activation-form__more">
             <Button
@@ -42,6 +48,19 @@ export default {
     return {
       avatarUrl: null,
     };
+  },
+  watch: {
+    avatarUrl(newVal) {
+      if (newVal) {
+        localStorage.setItem("profilePhoto", newVal);
+        console.log("Saved to storage:", newVal);
+      }
+    },
+  },
+  computed: {
+    isPhotoSet() {
+      return !!localStorage.getItem("profilePhoto");
+    },
   },
   methods: {
     continueWithPhoto() {

@@ -38,18 +38,28 @@ import Svg from "../../components/TheSvg.vue";
 import Input from "../../components/UI/TheInput.vue";
 import Button from "../../components/UI/TheButton.vue";
 import ModalEmail from "../../components/modal/modal-email.vue";
+import ModalPhoto from "../../components/modal/modal-photo.vue";
+import { useAuthStore } from "../../store/auth";
 export default {
   components: {
     Svg,
     Input,
     Button,
     ModalEmail,
+    ModalPhoto,
   },
   data() {
     return {
       email: "",
       showModalEmail: false,
+      photo: null,
     };
+  },
+  computed: {
+    isPhotoSet() {
+      const store = useAuthStore();
+      return !!store.profilePhoto;
+    },
   },
   methods: {
     isEmailValid() {
@@ -58,6 +68,10 @@ export default {
     async onSubmit(e) {
       e.preventDefault();
       if (!this.isEmailValid()) return;
+      const store = useAuthStore();
+      if (this.photo && !store.profilePhoto) {
+        store.setProfilePhoto(this.photo);
+      }
       // запрос на сервер
       // await api.recovery(this.email);
       this.showModalEmail = true;

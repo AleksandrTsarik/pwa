@@ -77,7 +77,7 @@
 export default {
   name: "ModalPhoto",
   props: {
-    value: {
+    modelValue: {
       type: String,
       default: null,
     },
@@ -94,9 +94,10 @@ export default {
       default: 95,
     },
   },
+  emits: ["update:modelValue"],
   data() {
     return {
-      localValue: this.value, // Локальная копия значения для v-model
+      localValue: this.modelValue, // Локальная копия значения для v-model
       showCropper: false,
       selectedImage: null,
       image: null,
@@ -113,8 +114,11 @@ export default {
   },
   watch: {
     // Следим за изменениями входящего значения
-    value(newVal) {
+    modelValue(newVal) {
       this.localValue = newVal;
+    },
+    localValue(newVal) {
+      this.$emit("update:modelValue", newVal);
     },
   },
   methods: {
@@ -264,8 +268,7 @@ export default {
       );
       avatarCtx.restore();
       const croppedImage = avatarCanvas.toDataURL();
-      this.localValue = croppedImage; // Обновляем локальное значение
-      this.$emit("input", croppedImage); // Отправляем событие родителю
+      this.localValue = croppedImage; // Обновляем локальное значение (watch вызовет emit)
       this.showCropper = false;
     },
   },
