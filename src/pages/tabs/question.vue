@@ -43,7 +43,10 @@
                 {{ item.text }}
               </div>
               <div class="questions-item__more">
-                <button v-if="item.commend == true">
+                <button
+                  v-if="item.commend == true"
+                  @click.stop="openModalAndCloseAccordion"
+                >
                   <span>Рекомендовать</span>
                   <span>
                     <svg
@@ -67,15 +70,44 @@
             </div>
           </div>
         </div>
+        <div class="questions__form">
+          <form>
+            <div class="questions-form">
+              <h2 class="questions-form__title title">Форма обратной связи</h2>
+              <div class="questions-form__subtitle">
+                Не нашли интересующего вопроса? Напишие нам и мы обязательно
+                ответим в ближайшее время!
+              </div>
+              <div class="questions-form__textarea">
+                <textarea placeholder="Описание проблемы"></textarea>
+              </div>
+              <div class="questions-form__btn">
+                <Button label="Отправить" type="submit" />
+              </div>
+              <div class="questions-form__finish">
+                Оставляя контакты, вы соглашаетесь с
+                <a href="#"> Политкой обработки персональных данных</a>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
+  <ModalCallback v-if="showModalCallback" @close="showModalCallback = false" />
 </template>
 
 <script>
+import ModalCallback from "../../components/modal/modal-callback.vue";
+import Button from "../../components/UI/TheButton.vue";
 export default {
+  components: {
+    ModalCallback,
+    Button,
+  },
   data() {
     return {
+      showModalCallback: false,
       questions: [
         {
           title: "Когда начинается моя подписка СпортКлюч?",
@@ -128,12 +160,17 @@ export default {
         this.isOpen = index;
       }
     },
+    openModalAndCloseAccordion() {
+      this.isOpen = null;
+      this.showModalCallback = true;
+    },
   },
 };
 </script>
 
 <style lang="scss" scoped>
 .questions {
+  margin-bottom: 100px;
   &__list {
     counter-reset: num;
   }
@@ -246,6 +283,37 @@ export default {
   &.active {
     .questions-item__arrow {
       transform: rotate(180deg);
+    }
+  }
+}
+.questions-form {
+  background-color: var(--primary);
+  border-radius: 16px;
+  padding: 24px 14px;
+  &__title {
+    margin: 15px;
+  }
+  &__subtitle {
+    font-family: var(--ff);
+    font-size: 16px;
+    font-weight: 400;
+    margin-bottom: 20px;
+  }
+  &__textarea {
+    textarea {
+      resize: none;
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+      background-color: #fff;
+      border: none;
+      outline: none;
+      min-height: 140px;
+      padding: 14px;
+      font-size: 14px;
+      &::placeholder {
+        color: var(--text);
+      }
     }
   }
 }

@@ -1,5 +1,6 @@
 <template>
   <div class="modal">
+    <div class="modal__overlay" @click="$emit('close')"></div>
     <div class="modal__overlay"></div>
     <div class="modal__wrap modal-password">
       <div class="modal__ico"><Svg type="check"></Svg></div>
