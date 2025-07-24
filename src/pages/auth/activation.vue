@@ -69,7 +69,7 @@ export default {
       } else {
         console.log("Фото не выбрано");
       }
-      this.$router.push("/");
+      this.$router.push({ path: "/", query: { tab: 2 } });
     },
   },
 };

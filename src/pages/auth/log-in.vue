@@ -162,7 +162,18 @@
                     />
                   </div>
                   <div class="reg-form-logIn__btns">
-                    <Button label="Войти" class="btn-primary" />
+                    <Button
+                      label="Войти"
+                      class="btn-primary"
+                      @click.prevent="onLogin"
+                    />
+                    <div
+                      v-if="error"
+                      class="error"
+                      style="color: red; margin-top: 10px"
+                    >
+                      {{ error }}
+                    </div>
                     <router-link to="/recovery" class="btn btn-transparent"
                       >Забыли пароль?</router-link
                     >
@@ -195,6 +206,8 @@
 import Svg from "../../components/TheSvg.vue";
 import Input from "../../components/UI/TheInput.vue";
 import Button from "../../components/UI/TheButton.vue";
+import { useAuthStore } from "../../store/auth";
+import demoUser from "../../demo/demoUser";
 
 export default {
   components: {
@@ -207,7 +220,27 @@ export default {
       isLogin: true,
       email: "",
       password: "",
+      auth: null,
+      error: "",
     };
+  },
+  mounted() {
+    this.auth = useAuthStore();
+  },
+  methods: {
+    async onLogin() {
+      this.error = "";
+      // DEMO: имитация POST-запроса к demoUser
+      if (
+        this.email === demoUser.email &&
+        this.password === demoUser.password
+      ) {
+        this.auth.login(demoUser, "demo-token");
+        this.$router.replace({ path: "/activation" });
+      } else {
+        this.error = "Неверный email или пароль";
+      }
+    },
   },
 };
 </script>

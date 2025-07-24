@@ -12,7 +12,7 @@
     <div class="nav-menu-content" v-else-if="selectedTab === 3">
       <Qusetions />
     </div>
-    <TheNav @tab-change="updateTab" />
+    <TheNav :selectedTab="selectedTab" @tab-change="updateTab" />
   </div>
 </template>
 
@@ -34,6 +34,11 @@ export default {
     updateTab(tab) {
       this.selectedTab = tab;
     },
+  },
+  mounted() {
+    if (this.$route.query.tab) {
+      this.selectedTab = Number(this.$route.query.tab);
+    }
   },
 };
 </script>

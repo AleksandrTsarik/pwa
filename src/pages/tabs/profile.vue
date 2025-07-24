@@ -35,8 +35,10 @@
       <div class="profile__container-small">
         <div class="profile-info">
           <div class="profile-info__user">
-            <div class="profile-info__name">Виктор Куликов</div>
-            <div class="profile-info__position">Менеджер проектов</div>
+            <div class="profile-info__name">
+              {{ user.firstName }} {{ user.lastName }}
+            </div>
+            <div class="profile-info__position">{{ user.position }}</div>
           </div>
           <Card :cardOptions="cardInfo" />
 
@@ -79,11 +81,11 @@
               <div class="profile-info-user__title">Общая информация</div>
               <div class="profile-info-user__row">
                 <p>Почта</p>
-                <p>Avito_DesgnVictorB@gmail.com</p>
+                <p>{{ user.email }}</p>
               </div>
               <div class="profile-info-user__row">
                 <p>Телефон</p>
-                <p>+7(937) 256-32-24</p>
+                <p>{{ user.phone }}</p>
               </div>
             </div>
 
@@ -91,11 +93,11 @@
               <div class="profile-info-user__title">Место работы</div>
               <div class="profile-info-user__row">
                 <p>Название компании</p>
-                <p>Авито</p>
+                <p>{{ user.company }}</p>
               </div>
               <div class="profile-info-user__row">
                 <p>Город</p>
-                <p>Москва</p>
+                <p>{{ user.city }}</p>
               </div>
             </div>
           </div>
@@ -129,14 +131,12 @@
 <script>
 import Card from "../../components/TheCard.vue";
 import ModalPhoto from "../../components/modal/modal-photo.vue";
+import { useAuthStore } from "../../store/auth";
+import demoUser from "../../demo/demoUser";
 export default {
   components: { Card, ModalPhoto },
   data() {
     return {
-      cardInfo: {
-        cardTtariff: "gold",
-        tariff: "326 мест",
-      },
       visitList: [
         {
           day: "",
@@ -172,7 +172,24 @@ export default {
     };
   },
   mounted() {
-    this.profilePhoto = localStorage.getItem("profilePhoto");
+    this.auth = useAuthStore();
+    this.profilePhoto =
+      this.auth.profilePhoto || localStorage.getItem("profilePhoto");
+  },
+  computed: {
+    user() {
+      return this.auth?.user || demoUser;
+    },
+    cardInfo() {
+      // cardTtariff и tariff из user, если есть, иначе из demoUser
+      const u = this.user;
+      return {
+        cardTtariff: u.cardTtariff || demoUser.cardTtariff,
+        tariff: u.tariff || demoUser.tariff,
+        company: u.company,
+        city: u.city,
+      };
+    },
   },
   watch: {
     $route() {
@@ -181,6 +198,7 @@ export default {
   },
   methods: {
     logout() {
+      this.auth.logout();
       localStorage.clear();
       this.$router.replace({ path: "/log-in" });
     },
@@ -194,7 +212,7 @@ export default {
     },
     onPhotoSelected(photo) {
       if (photo) {
-        localStorage.setItem("profilePhoto", photo);
+        this.auth.setProfilePhoto(photo);
         this.profilePhoto = photo;
       }
       this.showPhotoModal = false;

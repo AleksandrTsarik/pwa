@@ -32,6 +32,9 @@
                   @select="optionsSelect"
                 />
                 <Input placeholder="Адрес" type="text" />
+                <div class="form-textarea">
+                  <textarea placeholder=""></textarea>
+                </div>
               </div>
             </div>
           </form>
