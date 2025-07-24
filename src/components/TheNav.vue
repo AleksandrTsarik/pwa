@@ -183,12 +183,39 @@ export default {
         text-align: right;
       }
       &.active {
-        span {
-          svg path {
-            stroke: red;
+        &:nth-child(2) {
+          ::v-deep svg path {
+            &:first-child {
+              fill: var(--text);
+              stroke: var(--text);
+            }
+            &:last-child {
+              fill: var(--text);
+              stroke: var(--lightSecondary);
+            }
           }
-          svg path {
-            fill: green;
+        }
+        &:nth-child(3) {
+          ::v-deep svg path {
+            stroke: var(--text);
+          }
+        }
+        &:nth-child(4) {
+          ::v-deep svg path {
+            stroke: var(--text);
+            fill: var(--text);
+          }
+        }
+        &:nth-child(5) {
+          ::v-deep svg path {
+            &:first-child {
+              fill: var(--text);
+              stroke: var(--text);
+            }
+            &:last-child {
+              fill: var(--text);
+              stroke: var(--lightSecondary);
+            }
           }
         }
       }
