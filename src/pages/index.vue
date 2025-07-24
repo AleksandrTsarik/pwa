@@ -1,16 +1,16 @@
 <template>
-  <div class="navm-menu">
+  <div class="nav-menu">
     <!-- контент страницы -->
-    <div v-if="selectedTab === 0">
+    <div class="nav-menu-content" v-if="selectedTab === 0">
       <Map />
     </div>
-    <div v-else-if="selectedTab === 1">
+    <div class="nav-menu-content" v-else-if="selectedTab === 1">
       <QrCode />
     </div>
-    <div v-else-if="selectedTab === 2">
+    <div class="nav-menu-content" v-else-if="selectedTab === 2">
       <Profile />
     </div>
-    <div v-else-if="selectedTab === 3">
+    <div class="nav-menu-content" v-else-if="selectedTab === 3">
       <Qusetions />
     </div>
     <!-- табы -->
@@ -40,4 +40,8 @@ export default {
 };
 </script>
 
-<style lang="scss"></style>
+<style lang="scss">
+.nav-menu-content {
+  margin-bottom: 60px;
+}
+</style>
