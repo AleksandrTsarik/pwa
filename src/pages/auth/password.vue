@@ -1,7 +1,7 @@
 <template>
   <div class="bg-block--beige password">
     <div class="password__head block-head">
-      <div class="password__container">
+      <div class="password__container-small">
         <div class="password__info">
           <h2 class="title password__title">Создание пароля</h2>
           <div class="password-check">
@@ -37,7 +37,7 @@
       </div>
     </div>
     <div class="password__body bg-block--white block-body">
-      <div class="password__container">
+      <div class="password__container-small">
         <form @submit="onSubmit" class="password-form">
           <div class="password-form__inputs">
             <Input v-model="password" name="Новый пароль" type="password" />

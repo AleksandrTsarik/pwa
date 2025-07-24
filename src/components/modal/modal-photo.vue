@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="photo-wrap">
     <div class="photo-selector" @click="openFileDialog">
       <img v-if="localValue" :src="localValue" class="avatar-preview" />
       <svg
@@ -271,6 +271,12 @@ export default {
       const croppedImage = avatarCanvas.toDataURL();
       this.localValue = croppedImage; // Обновляем локальное значение (watch вызовет emit)
       this.showCropper = false;
+      // --- ДОБАВЛЕНО: сохраняем фото и переходим на главную ---
+      localStorage.setItem("profilePhoto", croppedImage);
+      if (this.$router) {
+        this.$router.push("/");
+      }
+      // --- КОНЕЦ ДОБАВЛЕНИЯ ---
     },
   },
 };

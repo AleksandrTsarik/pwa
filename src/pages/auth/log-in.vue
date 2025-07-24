@@ -2,7 +2,7 @@
   <div class="reg bg-block--beige">
     <div class="reg-entrance">
       <div class="reg-entrance__head block-head">
-        <div class="reg-entrance__container">
+        <div class="reg-entrance__container-small">
           <div class="reg-entrance__logo">
             <router-link to="/">
               <svg
@@ -126,7 +126,7 @@
         </div>
       </div>
       <div class="reg-entrance__body bg-block--white block-body">
-        <div class="reg-entrance__container">
+        <div class="reg-entrance__container-small">
           <h2 class="title reg-entrance__title">Вход в приложение</h2>
           <div class="reg-form-wrap">
             <form>

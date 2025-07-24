@@ -1,7 +1,7 @@
 <template>
   <div class="bg-block--beige activation">
     <div class="activation__head block-head">
-      <div class="activation__container">
+      <div class="activation__container-small">
         <div class="activation__info">
           <h2 class="title activation__title">
             Для активации аккаунта добавь свое фото
@@ -14,7 +14,7 @@
       </div>
     </div>
     <div class="activation__body bg-block--white block-body">
-      <div class="activation__container">
+      <div class="activation__container-small">
         <form class="activation-form">
           <div class="activation-form__photo">
             <ModalPhoto v-model="avatarUrl" :disabled="isPhotoSet" />
@@ -26,11 +26,11 @@
             </div>
           </div>
           <div class="activation-form__more">
-            <Button
+            <!-- <Button
               label="Продолжить"
               class="btn-primary"
               @click.prevent="continueWithPhoto"
-            />
+            /> -->
           </div>
         </form>
       </div>
@@ -76,6 +76,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.activation {
+}
 .activation-form {
   display: flex;
   flex-direction: column;

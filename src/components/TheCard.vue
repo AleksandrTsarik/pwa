@@ -289,9 +289,12 @@ export default {
 .card {
   border-radius: 10px;
   padding: 24px;
-  max-width: 330px;
+  // max-width: 330px;
   width: 100%;
-  height: 180px;
+  height: 200px;
+  @media (max-width: 575px) {
+    height: 180px;
+  }
   &--gold {
     background: radial-gradient(
       70.88% 205.78% at 17.38% 23.89%,

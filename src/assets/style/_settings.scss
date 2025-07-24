@@ -66,6 +66,15 @@ html {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
+  padding: 0 40px;
+  @media (max-width: 575px) {
+    padding: 0 15px;
+  }
+}
+[class*="__container-small"] {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
   padding: 0 15px;
 }
 h1,
@@ -106,5 +115,12 @@ h2 {
 .color {
   &--white {
     color: #fff !important;
+  }
+}
+.profile {
+  .photo-wrap {
+    .photo-selector {
+      display: none !important;
+    }
   }
 }

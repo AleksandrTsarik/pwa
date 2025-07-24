@@ -1,6 +1,5 @@
 <template>
   <div class="nav-menu">
-    <!-- контент страницы -->
     <div class="nav-menu-content" v-if="selectedTab === 0">
       <Map />
     </div>
@@ -13,7 +12,6 @@
     <div class="nav-menu-content" v-else-if="selectedTab === 3">
       <Qusetions />
     </div>
-    <!-- табы -->
     <TheNav @tab-change="updateTab" />
   </div>
 </template>
@@ -29,7 +27,7 @@ export default {
   components: { TheNav, Map, QrCode, Profile, Qusetions },
   data() {
     return {
-      selectedTab: 0,
+      selectedTab: 2,
     };
   },
   methods: {

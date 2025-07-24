@@ -1,7 +1,7 @@
 <template>
   <div class="bg-block--beige recovery">
     <div class="password__haed block-head">
-      <div class="recovery__container">
+      <div class="recovery__container-small">
         <router-link to="/log-in" class="recovery__back">
           <Svg type="arrowBack"></Svg>
         </router-link>
@@ -15,7 +15,7 @@
       </div>
     </div>
     <div class="recovery__body bg-block--white block-body">
-      <div class="recovery__container">
+      <div class="recovery__container-small">
         <form @submit="onSubmit">
           <div class="recovery-form__inputs">
             <Input v-model="email" name="Email" type="text" />

@@ -173,6 +173,7 @@ export default {
   margin-bottom: 100px;
   &__list {
     counter-reset: num;
+    margin-bottom: 60px;
   }
   &__item {
     counter-increment: num;
