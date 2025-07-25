@@ -148,6 +148,7 @@ export default {
   background-size: cover;
   background-repeat: no-repeat;
   background-position: 50% 50%;
+  background-color: transparent;
   height: 60px;
   ul {
     display: grid;

@@ -439,6 +439,8 @@ export default {
 .map {
   overflow: hidden;
   position: relative;
+  margin-bottom: -60px;
+
   /* height: 100vh;
   position: relative; */
 }
