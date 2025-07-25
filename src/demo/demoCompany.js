@@ -9,6 +9,9 @@ export default {
             phone: '+7 (495) 255‒59‒25',
             email: 'info@ddxfitness.ru',
             website: 'https://ddxfitness.ru',
+            rating: '3',
+            logo: '',
+            price: 'от 1700 р'
         },
         {
             name: "DDX Fitness",
@@ -19,6 +22,9 @@ export default {
             phone: '+7 (495) 255‒59‒25',
             email: 'info@ddxfitness.ru',
             website: 'https://ddxfitness.ru',
+            rating: '3.5',
+            logo: '',
+            price: 'от 1700 р'
         },
         {
             name: "DDX Fitness",
@@ -29,6 +35,9 @@ export default {
             phone: '+7 (495) 255‒59‒25',
             email: 'info@ddxfitness.ru',
             website: 'https://ddxfitness.ru',
+            rating: '3.8',
+            logo: '',
+            price: 'от 1700 р'
         },
         {
             name: "DDX Fitness",
@@ -39,6 +48,9 @@ export default {
             phone: '+7 (495) 255‒59‒25',
             email: 'info@ddxfitness.ru',
             website: 'https://ddxfitness.ru',
+            rating: '4',
+            logo: '',
+            price: 'от 1700 р'
         },
         {
             name: "Xfit",
@@ -49,6 +61,9 @@ export default {
             phone: '+7 (495) 432‒53‒09',
             email: 'pvd-manager@xfit.ru',
             website: 'pravda.xfit.ru',
+            rating: '5',
+            logo: '',
+            price: 'от 1700 р'
         },
         {
             name: "Xfit",
@@ -59,6 +74,9 @@ export default {
             phone: '+7 (495) 172‒39‒47',
             email: 'monsport-manager@xfit.ru',
             website: 'https://monarh.xfit.ru',
+            rating: '4.5',
+            logo: '',
+            price: 'от 1700 р'
         },
         {
             name: "Xfit",
@@ -69,6 +87,9 @@ export default {
             phone: '+7 (495) 859‒45‒57',
             email: 'smolenskaya@xfit.su',
             website: 'www.xfit.ru',
+            rating: '1.5',
+            logo: '',
+            price: 'от 1700 р'
         }
     ]
 }

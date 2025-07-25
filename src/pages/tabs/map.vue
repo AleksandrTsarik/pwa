@@ -20,8 +20,25 @@
         :style="cardStyle(idx)"
         @click="selectCompany(company)"
       >
-        <h3>{{ company.name }}</h3>
-        <p>{{ company.address }}</p>
+        <!-- Отображение изображения в карточке -->
+        <img
+          :src="company.image || '/img/placeholder.jpg'"
+          :alt="company.name"
+          class="company-card__image"
+          @error="onImageError"
+        />
+        <div class="company-card__info">
+          <h3>{{ company.name }}</h3>
+          <p class="company-card__address">{{ company.address }}</p>
+          <div class="company-card__meta">
+            <span v-if="company.price" class="company-card__price">{{
+              company.price
+            }}</span>
+            <span v-if="company.rating" class="company-card__rating"
+              >★ {{ company.rating }}</span
+            >
+          </div>
+        </div>
       </div>
       <div v-if="companiesInView.length > 1" class="company-pagination">
         <span
@@ -37,6 +54,7 @@
 
 <script>
 import { ref, onMounted, shallowRef } from "vue";
+// Предполагается, что demoCompany содержит массив company с нужными полями
 import demoCompany from "../../demo/demoCompany";
 
 export default {
@@ -47,9 +65,12 @@ export default {
       demoCompany.company.map((c, idx) => ({
         ...c,
         id: idx + 1,
+        // Добавим примерные данные, если их нет в demoCompany
+        image: c.image || null, // Может быть null, тогда используется заглушка
+        price: c.price || "Цена не указана",
+        rating: c.rating || null, // Может быть null
       }))
     );
-
     const selectedCompany = ref(null);
     const mapInstance = shallowRef(null);
     const userMarker = shallowRef(null); // Для хранения метки геолокации
@@ -59,6 +80,9 @@ export default {
     let deltaX = 0;
     let dragging = false;
 
+    // --- Новый класс для кастомной иконки ---
+    let CustomIconLayout;
+
     // Инициализация карты
     const initMap = () => {
       // Убедимся, что API загружено
@@ -66,6 +90,58 @@ export default {
         console.error("Yandex Maps API not loaded");
         return;
       }
+
+      // --- Определение кастомного макета иконки ---
+      CustomIconLayout = window.ymaps.templateLayoutFactory.createClass(
+        `
+        <div class="custom-placemark" style="position: relative; transform: translate(-50%, -100%);">
+          <div class="custom-placemark__image-container">
+            <img src="{{ properties.image }}" alt="{{ properties.name }}" class="custom-placemark__image" onerror="this.src='/img/placeholder-icon.jpg'; this.onerror=null;">
+            <div class="custom-placemark__price">{{ properties.price }}</div>
+          </div>
+          <div class="custom-placemark__info">
+            <div class="custom-placemark__name">{{ properties.name }}</div>
+            <div class="custom-placemark__rating" v-if="properties.rating">★ {{ properties.rating }}</div>
+          </div>
+          <div class="custom-placemark__tail"></div>
+        </div>
+        `,
+        {
+          // Переопределяем метод build, чтобы добавить обработчики событий
+          build: function () {
+            // Вызываем родительский метод build
+            CustomIconLayout.superclass.build.call(this);
+            // Получаем ссылку на DOM-элемент метки
+            const element =
+              this.getParentElement().getElementsByClassName(
+                "custom-placemark"
+              )[0];
+            if (element) {
+              // Добавляем обработчик клика на саму метку
+              element.onclick = () => {
+                const companyId = this.getData().properties.get("companyId");
+                const company = companies.value.find((c) => c.id === companyId);
+                if (company) {
+                  selectCompany(company);
+                  mapInstance.value.setCenter(company.coordinates);
+                }
+              };
+            }
+          },
+          // Переопределяем метод clear, чтобы очистить обработчики событий
+          clear: function () {
+            const element =
+              this.getParentElement().getElementsByClassName(
+                "custom-placemark"
+              )[0];
+            if (element) {
+              element.onclick = null;
+            }
+            // Вызываем родительский метод clear
+            CustomIconLayout.superclass.clear.call(this);
+          },
+        }
+      );
 
       mapInstance.value = new window.ymaps.Map("yandexMap", {
         center: [37.6176, 55.7558], // Начальный центр (Москва)
@@ -107,37 +183,52 @@ export default {
 
       // Добавляем метки компаний
       addCompanyMarkers();
-
       // Подписываемся на событие изменения границ карты
       mapInstance.value.events.add("boundschange", updateCompaniesInView);
       updateCompaniesInView();
     };
 
-    // Добавление меток компаний на карту
+    // Добавление меток компаний на карту с кастомным макетом
     const addCompanyMarkers = () => {
-      if (!mapInstance.value) return;
+      if (!mapInstance.value || !CustomIconLayout) return;
+
+      // Очищаем предыдущие метки, если они были
+      mapInstance.value.geoObjects.removeAll();
+
+      // Добавляем заново метку пользователя, если она была
+      if (userMarker.value) {
+        mapInstance.value.geoObjects.add(userMarker.value);
+      }
 
       companies.value.forEach((company) => {
         const placemark = new window.ymaps.Placemark(
           company.coordinates,
           {
-            balloonContent: `<strong>${company.name}</strong><br>${company.address}`,
+            // Данные для макета
+            companyId: company.id,
+            name: company.name,
+            address: company.address,
+            image: company.image || "/img/placeholder-icon.jpg", // Используем заглушку
+            price: company.price || "Цена",
+            rating: company.rating,
+            // Для стандартного hintContent (на случай проблем с кастомным)
             hintContent: company.name,
           },
           {
-            // Опционально: можно задать кастомную иконку
-            // iconLayout: 'default#image',
-            // iconImageHref: '/path/to/icon.png',
-            // iconImageSize: [30, 42],
+            // Указываем кастомный макет иконки
+            iconLayout: CustomIconLayout,
+            // Отключаем стандартный балун, если не нужен
+            // balloonContent: `<strong>${company.name}</strong><br>${company.address}`,
+            // Отключаем стандартную иконку
+            iconShape: null, // Или определите форму, если нужно
           }
         );
 
-        // Добавляем обработчик клика на метку
-        placemark.events.add("click", () => {
-          selectCompany(company);
-          // Центрируем карту на метке
-          mapInstance.value.setCenter(company.coordinates);
-        });
+        // Добавляем обработчик клика на метку (альтернативный способ)
+        // placemark.events.add("click", () => {
+        //   selectCompany(company);
+        //   mapInstance.value.setCenter(company.coordinates);
+        // });
 
         mapInstance.value.geoObjects.add(placemark);
       });
@@ -154,7 +245,6 @@ export default {
     // Получение местоположения пользователя
     const getUserLocation = () => {
       if (!mapInstance.value) return;
-
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -163,10 +253,8 @@ export default {
               position.coords.latitude,
             ];
             // Обратите внимание: Яндекс.Карты используют [долгота, широта]
-
             // Центрируем карту на местоположении пользователя
             mapInstance.value.setCenter([userCoords[0], userCoords[1]], 15);
-
             // Добавляем или обновляем метку пользователя
             if (userMarker.value) {
               userMarker.value.geometry.setCoordinates([
@@ -234,19 +322,23 @@ export default {
         };
       }
     };
+
     const goTo = (idx) => {
       activeIndex.value = idx;
     };
+
     // Свайп тач
     const onTouchStart = (e) => {
       if (companiesInView.value.length <= 1) return;
       dragging = true;
       startX = e.touches[0].clientX;
     };
+
     const onTouchMove = (e) => {
       if (!dragging) return;
       deltaX = e.touches[0].clientX - startX;
     };
+
     const onTouchEnd = () => {
       if (!dragging) return;
       if (deltaX > 50 && activeIndex.value > 0) {
@@ -260,16 +352,19 @@ export default {
       dragging = false;
       deltaX = 0;
     };
+
     // Свайп мышью
     const onMouseDown = (e) => {
       if (companiesInView.value.length <= 1) return;
       dragging = true;
       startX = e.clientX;
     };
+
     const onMouseMove = (e) => {
       if (!dragging) return;
       deltaX = e.clientX - startX;
     };
+
     const onMouseUp = () => {
       if (!dragging) return;
       if (deltaX > 50 && activeIndex.value > 0) {
@@ -284,6 +379,11 @@ export default {
       deltaX = 0;
     };
 
+    // Обработка ошибки загрузки изображения в карточке
+    const onImageError = (event) => {
+      event.target.src = "/img/placeholder.jpg"; // Путь к вашей заглушке
+    };
+
     // Загрузка Yandex Maps API
     const loadYandexMapScript = () => {
       return new Promise((resolve, reject) => {
@@ -291,7 +391,6 @@ export default {
           resolve(window.ymaps);
           return;
         }
-
         const script = document.createElement("script");
         script.src =
           "https://api-maps.yandex.ru/2.1/?apikey=ВАШ_API_КЛЮЧ&lang=ru_RU"; // Замените ВАШ_API_КЛЮЧ на ваш ключ
@@ -330,6 +429,7 @@ export default {
       onMouseDown,
       onMouseMove,
       onMouseUp,
+      onImageError, // Добавляем метод обработки ошибки изображения
     };
   },
 };
@@ -353,26 +453,30 @@ export default {
   left: 0;
   right: 0;
   bottom: 50px;
-  z-index: 0;
+  z-index: 1000; /* Увеличиваем z-index */
   display: flex;
-  background-color: #dedede;
+  background-color: rgba(222, 222, 222, 0.8); /* Делаем фон полупрозрачным */
+  backdrop-filter: blur(5px); /* Добавляем размытие фона */
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
   overflow: hidden;
-  height: 140px;
+  height: 160px; /* Увеличиваем высоту для изображения */
+  padding: 10px 0;
+  box-sizing: border-box;
 }
+
 .company-card {
-  min-width: 260px;
+  min-width: 280px; /* Увеличиваем ширину */
   max-width: 90vw;
   margin: 0 10px;
-  background: #f5f5f5;
-  border-radius: 8px;
+  background: #ffffff;
+  border-radius: 12px; /* Более закругленные углы */
   padding: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Более выраженная тень */
   cursor: pointer;
   flex-shrink: 0;
-  transition: transform 0.3s, opacity 0.3s;
+  transition: transform 0.3s, opacity 0.3s, box-shadow 0.3s;
   position: absolute;
   left: 50%;
   top: 0;
@@ -380,18 +484,67 @@ export default {
   opacity: 0;
   z-index: 1;
   pointer-events: none;
+  display: flex; /* Используем flexbox для расположения изображения и текста */
+  align-items: flex-start; /* Выравнивание по верхнему краю */
 }
+
+.company-card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.company-card__image {
+  width: 80px; /* Фиксированная ширина изображения */
+  height: 80px; /* Фиксированная высота изображения */
+  object-fit: cover; /* Обрезка изображения до нужного размера */
+  border-radius: 8px; /* Закругление углов изображения */
+  margin-right: 12px; /* Отступ справа от изображения */
+  flex-shrink: 0; /* Изображение не сжимается */
+}
+
+.company-card__info {
+  flex: 1; /* Занимает оставшееся пространство */
+  min-width: 0; /* Позволяет тексту обрезаться, если не помещается */
+}
+
+.company-card__address {
+  font-size: 0.9em;
+  color: #666;
+  margin: 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.company-card__meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.company-card__price {
+  font-weight: bold;
+  color: #28a745; /* Зеленый цвет для цены */
+}
+
+.company-card__rating {
+  color: #ffc107; /* Желтый цвет для рейтинга */
+  font-weight: bold;
+}
+
 .company-card.active {
   opacity: 1;
   z-index: 2;
   pointer-events: auto;
 }
+
 .company-pagination {
   display: flex;
   justify-content: center;
   margin-top: 12px;
   gap: 8px;
+  z-index: 3; /* Убедимся, что точки пагинации поверх карточек */
 }
+
 .company-pagination .dot {
   width: 10px;
   height: 10px;
@@ -401,7 +554,79 @@ export default {
   transition: background 0.2s;
   cursor: pointer;
 }
+
 .company-pagination .dot.active {
   background: #007bff;
+}
+</style>
+
+<!-- Добавляем стили для кастомной метки вне scoped стилей -->
+<style>
+/* Стили для кастомной метки на карте */
+.custom-placemark {
+  position: relative;
+  width: 120px; /* Ширина метки */
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  z-index: 100; /* Высокий z-index для метки */
+}
+
+.custom-placemark__image-container {
+  position: relative;
+  width: 100%;
+  height: 60px; /* Высота контейнера изображения */
+  border-radius: 6px 6px 0 0;
+  overflow: hidden;
+}
+
+.custom-placemark__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.custom-placemark__price {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.custom-placemark__info {
+  padding: 6px;
+}
+
+.custom-placemark__name {
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.custom-placemark__rating {
+  color: #ffc107;
+  font-size: 11px;
+}
+
+.custom-placemark__tail {
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid white;
 }
 </style>
