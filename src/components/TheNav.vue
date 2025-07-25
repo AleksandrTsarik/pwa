@@ -175,6 +175,7 @@ export default {
         background-color: var(--primary);
         align-items: center;
         justify-content: center;
+        border: solid 3px #fff;
       }
       &:nth-child(4) {
         text-align: right;
@@ -221,5 +222,8 @@ export default {
       }
     }
   }
+}
+.nav-menu-content {
+  overflow: hidden;
 }
 </style>

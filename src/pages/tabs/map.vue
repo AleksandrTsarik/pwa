@@ -1,16 +1,35 @@
 <template>
-  <div class="map-demo">
+  <div class="map">
     <div id="yandexMap" class="map-container"></div>
-    <div class="company-swiper">
+    <div
+      class="company-swiper"
+      v-if="companiesInView.length > 0"
+      @touchstart="onTouchStart"
+      @touchmove="onTouchMove"
+      @touchend="onTouchEnd"
+      @mousedown="onMouseDown"
+      @mousemove="onMouseMove"
+      @mouseup="onMouseUp"
+      @mouseleave="onMouseUp"
+    >
       <div
         class="company-card"
-        v-for="company in companiesInView"
+        v-for="(company, idx) in companiesInView"
         :key="company.id"
-        :class="{ active: selectedCompany?.id === company.id }"
+        :class="{ active: idx === activeIndex }"
+        :style="cardStyle(idx)"
         @click="selectCompany(company)"
       >
         <h3>{{ company.name }}</h3>
         <p>{{ company.address }}</p>
+      </div>
+      <div v-if="companiesInView.length > 1" class="company-pagination">
+        <span
+          v-for="(company, idx) in companiesInView"
+          :key="company.id"
+          :class="{ dot: true, active: idx === activeIndex }"
+          @click="goTo(idx)"
+        ></span>
       </div>
     </div>
   </div>
@@ -35,6 +54,10 @@ export default {
     const mapInstance = shallowRef(null);
     const userMarker = shallowRef(null); // Для хранения метки геолокации
     const companiesInView = ref([]);
+    const activeIndex = ref(0);
+    let startX = 0;
+    let deltaX = 0;
+    let dragging = false;
 
     // Инициализация карты
     const initMap = () => {
@@ -178,7 +201,7 @@ export default {
     const updateCompaniesInView = () => {
       if (!mapInstance.value) return;
       const bounds = mapInstance.value.getBounds(); // [[sw_lng, sw_lat], [ne_lng, ne_lat]]
-      companiesInView.value = companies.value.filter((company) => {
+      const filtered = companies.value.filter((company) => {
         const [lng, lat] = company.coordinates;
         return (
           lng >= bounds[0][0] &&
@@ -187,6 +210,78 @@ export default {
           lat <= bounds[1][1]
         );
       });
+      companiesInView.value = filtered;
+      if (activeIndex.value >= filtered.length) {
+        activeIndex.value = 0;
+      }
+    };
+
+    // Слайдер: стили для карточки
+    const cardStyle = (idx) => {
+      if (idx === activeIndex.value) {
+        return {
+          transform: "translateX(-50%) scale(1)",
+          opacity: 1,
+          zIndex: 2,
+          pointerEvents: "auto",
+        };
+      } else {
+        return {
+          transform: "translateX(-50%) scale(0.8)",
+          opacity: 0,
+          zIndex: 1,
+          pointerEvents: "none",
+        };
+      }
+    };
+    const goTo = (idx) => {
+      activeIndex.value = idx;
+    };
+    // Свайп тач
+    const onTouchStart = (e) => {
+      if (companiesInView.value.length <= 1) return;
+      dragging = true;
+      startX = e.touches[0].clientX;
+    };
+    const onTouchMove = (e) => {
+      if (!dragging) return;
+      deltaX = e.touches[0].clientX - startX;
+    };
+    const onTouchEnd = () => {
+      if (!dragging) return;
+      if (deltaX > 50 && activeIndex.value > 0) {
+        activeIndex.value--;
+      } else if (
+        deltaX < -50 &&
+        activeIndex.value < companiesInView.value.length - 1
+      ) {
+        activeIndex.value++;
+      }
+      dragging = false;
+      deltaX = 0;
+    };
+    // Свайп мышью
+    const onMouseDown = (e) => {
+      if (companiesInView.value.length <= 1) return;
+      dragging = true;
+      startX = e.clientX;
+    };
+    const onMouseMove = (e) => {
+      if (!dragging) return;
+      deltaX = e.clientX - startX;
+    };
+    const onMouseUp = () => {
+      if (!dragging) return;
+      if (deltaX > 50 && activeIndex.value > 0) {
+        activeIndex.value--;
+      } else if (
+        deltaX < -50 &&
+        activeIndex.value < companiesInView.value.length - 1
+      ) {
+        activeIndex.value++;
+      }
+      dragging = false;
+      deltaX = 0;
     };
 
     // Загрузка Yandex Maps API
@@ -226,15 +321,26 @@ export default {
       selectCompany,
       getUserLocation,
       companiesInView,
+      activeIndex,
+      cardStyle,
+      goTo,
+      onTouchStart,
+      onTouchMove,
+      onTouchEnd,
+      onMouseDown,
+      onMouseMove,
+      onMouseUp,
     };
   },
 };
 </script>
 
 <style scoped>
-.map-demo {
-  height: 100vh;
+.map {
+  overflow: hidden;
   position: relative;
+  /* height: 100vh;
+  position: relative; */
 }
 
 .map-container {
@@ -246,16 +352,19 @@ export default {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
-  z-index: 10;
+  bottom: 50px;
+  z-index: 0;
   display: flex;
-  overflow-x: auto;
-  background: #fff;
-  padding: 10px 0;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  background-color: #dedede;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+  height: 140px;
 }
 .company-card {
-  min-width: 220px;
+  min-width: 260px;
+  max-width: 90vw;
   margin: 0 10px;
   background: #f5f5f5;
   border-radius: 8px;
@@ -263,10 +372,36 @@ export default {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 0.2s;
+  transition: transform 0.3s, opacity 0.3s;
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%) scale(1);
+  opacity: 0;
+  z-index: 1;
+  pointer-events: none;
 }
 .company-card.active {
-  background: #d1e7ff;
-  border: 2px solid #007bff;
+  opacity: 1;
+  z-index: 2;
+  pointer-events: auto;
+}
+.company-pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+  gap: 8px;
+}
+.company-pagination .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ccc;
+  display: inline-block;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.company-pagination .dot.active {
+  background: #007bff;
 }
 </style>
