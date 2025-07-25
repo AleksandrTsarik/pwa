@@ -2,7 +2,7 @@ export default {
   firstName: 'Иван',
   lastName: 'Иванов',
   email: 'demo.user@example.com',
-  password: 'demo123',
+  password: ' ',
   phone: '+7 (999) 123-45-67',
   position: 'Демо пользователь',
   company: 'ООО Демокомпания',
