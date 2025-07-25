@@ -435,7 +435,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .map {
   overflow: hidden;
   position: relative;
@@ -479,62 +479,51 @@ export default {
   transition: transform 0.3s, opacity 0.3s, box-shadow 0.3s;
   position: absolute;
   left: 50%;
-  top: 0;
-  transform: translateX(-50%) scale(1);
+  top: 50%;
+  transform: translate(-50%, -50%) scale(1);
   opacity: 0;
   z-index: 1;
   pointer-events: none;
   display: flex; /* Используем flexbox для расположения изображения и текста */
   align-items: flex-start; /* Выравнивание по верхнему краю */
-}
-
-.company-card:hover {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-}
-
-.company-card__image {
-  width: 80px; /* Фиксированная ширина изображения */
-  height: 80px; /* Фиксированная высота изображения */
-  object-fit: cover; /* Обрезка изображения до нужного размера */
-  border-radius: 8px; /* Закругление углов изображения */
-  margin-right: 12px; /* Отступ справа от изображения */
-  flex-shrink: 0; /* Изображение не сжимается */
-}
-
-.company-card__info {
-  flex: 1; /* Занимает оставшееся пространство */
-  min-width: 0; /* Позволяет тексту обрезаться, если не помещается */
-}
-
-.company-card__address {
-  font-size: 0.9em;
-  color: #666;
-  margin: 4px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.company-card__meta {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 6px;
-}
-
-.company-card__price {
-  font-weight: bold;
-  color: #28a745; /* Зеленый цвет для цены */
-}
-
-.company-card__rating {
-  color: #ffc107; /* Желтый цвет для рейтинга */
-  font-weight: bold;
-}
-
-.company-card.active {
-  opacity: 1;
-  z-index: 2;
-  pointer-events: auto;
+  &__image {
+    width: 80px; /* Фиксированная ширина изображения */
+    height: 80px; /* Фиксированная высота изображения */
+    object-fit: cover; /* Обрезка изображения до нужного размера */
+    border-radius: 8px; /* Закругление углов изображения */
+    margin-right: 12px; /* Отступ справа от изображения */
+    flex-shrink: 0; /* Изображение не сжимается */
+  }
+  &__info {
+    flex: 1; /* Занимает оставшееся пространство */
+    min-width: 0; /* Позволяет тексту обрезаться, если не помещается */
+  }
+  &__address {
+    font-size: 0.9em;
+    color: #666;
+    margin: 4px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  &__meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+  }
+  &__price {
+    font-weight: bold;
+    color: #28a745; /* Зеленый цвет для цены */
+  }
+  &__rating {
+    color: #ffc107; /* Желтый цвет для рейтинга */
+    font-weight: bold;
+  }
+  &.active {
+    opacity: 1;
+    z-index: 2;
+    pointer-events: auto;
+  }
 }
 
 .company-pagination {
@@ -543,25 +532,24 @@ export default {
   margin-top: 12px;
   gap: 8px;
   z-index: 3; /* Убедимся, что точки пагинации поверх карточек */
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ccc;
+    display: inline-block;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
 }
 
-.company-pagination .dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #ccc;
-  display: inline-block;
-  transition: background 0.2s;
-  cursor: pointer;
-}
-
-.company-pagination .dot.active {
+.company-pagination .company-pagination .dot.active {
   background: #007bff;
 }
 </style>
 
 <!-- Добавляем стили для кастомной метки вне scoped стилей -->
-<style>
+<style lang="scss">
 /* Стили для кастомной метки на карте */
 .custom-placemark {
   position: relative;
@@ -573,60 +561,53 @@ export default {
   font-family: Arial, sans-serif;
   font-size: 12px;
   z-index: 100; /* Высокий z-index для метки */
-}
-
-.custom-placemark__image-container {
-  position: relative;
-  width: 100%;
-  height: 60px; /* Высота контейнера изображения */
-  border-radius: 6px 6px 0 0;
-  overflow: hidden;
-}
-
-.custom-placemark__image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.custom-placemark__price {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-weight: bold;
-  font-size: 11px;
-}
-
-.custom-placemark__info {
-  padding: 6px;
-}
-
-.custom-placemark__name {
-  font-weight: bold;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 2px;
-}
-
-.custom-placemark__rating {
-  color: #ffc107;
-  font-size: 11px;
-}
-
-.custom-placemark__tail {
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 6px solid white;
+  &__image-container {
+    position: relative;
+    width: 100%;
+    height: 60px; /* Высота контейнера изображения */
+    border-radius: 6px 6px 0 0;
+    overflow: hidden;
+  }
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  &__price {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: bold;
+    font-size: 11px;
+  }
+  &__info {
+    padding: 6px;
+  }
+  &__name {
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+  &__rating {
+    color: #ffc107;
+    font-size: 11px;
+  }
+  &__tail {
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid white;
+  }
 }
 </style>
