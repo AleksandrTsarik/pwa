@@ -667,23 +667,6 @@ export default {
 .moscow-center-btn:active {
   transform: translateY(0);
 }
-
-/* Стили для слайдера */
-.slider-map.swiper {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  z-index: 0;
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 20px 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  .swiper-wrapper {
-    padding: 50px 0 150px;
-  }
-}
 </style>
 
 <!-- Добавляем стили для кастомной метки вне scoped стилей -->
@@ -826,9 +809,90 @@ export default {
     font-size: 14px;
   }
 }
-// .custom-marker {
-//   &.active {
-//     background-color: red;
-//   }
-// }
+
+/* Стили для слайдера */
+.slider-map.swiper {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  z-index: 0;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 20px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  .swiper-wrapper {
+    padding: 50px 0 150px;
+  }
+  .swiper-slide {
+  }
+  .slider {
+    margin: 0 auto;
+    max-width: 50%;
+    border: solid 1px;
+    @media (max-width: 575px) {
+      max-width: 90%;
+    }
+    &__wrap {
+      margin: 0 auto;
+    }
+    &__img {
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+    }
+    &__head {
+      display: grid;
+      grid-template-columns: 115px auto;
+      gap: 10px;
+    }
+    &__name {
+      font-size: 16px;
+      font-weight: 500;
+      font-family: var(--stetica);
+      margin-bottom: 15px;
+      margin-top: 10px;
+    }
+    &__time {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 400;
+      font-family: var(--ff);
+      margin-bottom: 10px;
+    }
+    &__location {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 400;
+      font-family: var(--ff);
+    }
+    &__tags {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+  }
+}
+.slider-tag {
+  background-color: rgba(215, 235, 255, 1);
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 400;
+  font-family: var(--ff);
+  padding: 3px 10px;
+  border: solid 1px transparent;
+  white-space: nowrap;
+  &:last-child {
+    background: none;
+    border-color: rgba(237, 237, 237, 1);
+  }
+}
 </style>
