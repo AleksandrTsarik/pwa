@@ -2,12 +2,12 @@ export default {
   cities: [
     {
       cityName: "Москва",
-      cityLocaltion: [55.755819, 37.617644],
+      cityLocaltion: [55.755864, 37.617698],
       company: [
         {
           name: "DDX Fitness",
           description: "Фитнес-клуб",
-          coordinates: [37.6176, 55.7558], // Исправляем координаты на Москву
+          coordinates: [55.752085, 37.596237],
           address: "​Улица Новый Арбат, 11 ст1​-2 этаж",
           studio: "",
           phone: "+7 (495) 255‒59‒25",
@@ -45,7 +45,7 @@ export default {
           studio: "small",
           description: "Фитнес-клуб",
           address: "Страстной бульвар, 10 к1",
-          coordinates: [37.611482, 55.766106], // Исправляем порядок координат
+          coordinates: [55.766106, 37.611482], // Исправляем порядок координат
           phone: "+7 (495) 255‒59‒25",
           email: "info@ddxfitness.ru",
           website: "https://ddxfitness.ru",
@@ -71,7 +71,7 @@ export default {
           description: "Фитнес-клуб",
           studio: "",
           address: "​Ходынский бульвар, 4​3 этаж",
-          coordinates: [37.53164, 55.784865], // Исправляем порядок координат
+          coordinates: [55.784865, 37.531640],
           phone: "+7 (495) 255‒59‒25",
           email: "info@ddxfitness.ru",
           website: "https://ddxfitness.ru",
@@ -89,7 +89,7 @@ export default {
           description: "Фитнес-клуб",
           studio: "small",
           address: "​Улица Маршала Чуйкова, 3",
-          coordinates: [37.764986, 55.703885], // Исправляем порядок координат
+          coordinates: [55.703885, 37.764986],
           phone: "+7 (495) 255‒59‒25",
           email: "info@ddxfitness.ru",
           website: "https://ddxfitness.ru",
@@ -115,7 +115,7 @@ export default {
           description: "Фитнес-клуб",
           studio: "small",
           address: "​Улица Правды, 21 ст2",
-          coordinates: [37.579538, 55.788044], // Исправляем порядок координат
+          coordinates: [55.788044, 37.579538],
           phone: "+7 (495) 432‒53‒09",
           email: "pvd-manager@xfit.ru",
           website: "pravda.xfit.ru",
@@ -141,7 +141,7 @@ export default {
           description: "Фитнес-клуб",
           studio: "",
           address: "Ленинградский проспект, 31а ст1",
-          coordinates: [37.560197, 55.7836], // Исправляем порядок координат
+          coordinates: [55.783600, 37.560197],
           phone: "+7 (495) 172‒39‒47",
           email: "monsport-manager@xfit.ru",
           website: "https://monarh.xfit.ru",
@@ -167,7 +167,7 @@ export default {
           description: "Фитнес-клуб",
           studio: "small",
           address: "Смоленская улица, 8",
-          coordinates: [37.580391, 55.746274], // Исправляем порядок координат
+          coordinates: [55.746274, 37.580391], // Исправляем порядок координат
           phone: "+7 (495) 859‒45‒57",
           email: "smolenskaya@xfit.su",
           website: "www.xfit.ru",

@@ -16,6 +16,21 @@
       class="moscow-center-btn"
       @click="forceCenterOnMoscow"
       title="Центрировать на Москве"
+      style="
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: #fff;
+        border: 2px solid #007bff;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #007bff;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      "
     >
       🏛️ Москва
     </button>
@@ -66,6 +81,30 @@
       "
     >
       📍 Маркеры
+    </button>
+
+    <!-- Кнопка для принудительного обновления слайдера -->
+    <button
+      class="force-slider-btn"
+      @click="forceUpdateSlider"
+      title="Обновить слайдер"
+      style="
+        position: absolute;
+        top: 20px;
+        left: 220px;
+        z-index: 1000;
+        background: #fff;
+        border: 2px solid #ffc107;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #ffc107;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      "
+    >
+      🔄 Слайдер
     </button>
   </div>
 </template>
@@ -259,6 +298,9 @@ export default {
         const initialSliderData = initSliderData();
         cards.value = initialSliderData;
         console.log("Начальные данные слайдера:", initialSliderData);
+
+        // Добавляем обработчик изменения границ карты для синхронизации со слайдером
+        mapInstance.value.events.add("boundschange", updateCompaniesInView);
 
         // Простая проверка геолокации без сложной логики
         try {
@@ -474,11 +516,21 @@ export default {
       }
     };
 
+    // 9.3. Функция для принудительного обновления слайдера
+    const forceUpdateSlider = () => {
+      console.log("=== ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ СЛАЙДЕРА ===");
+      if (mapInstance.value) {
+        updateCompaniesInView();
+      } else {
+        console.error("Карта не инициализирована");
+      }
+    };
+
     // 10. Инициализация слайдера с данными из demoCompany
     const initSliderData = () => {
       console.log("=== ИНИЦИАЛИЗАЦИЯ ДАННЫХ СЛАЙДЕРА ===");
 
-      // Преобразуем данные из demoCompany в формат для слайдера
+      // Показываем все компании изначально
       const sliderData = companies.value.map((company) => ({
         img: company.logo || "/img/placeholder.jpg",
         name: company.name,
@@ -498,37 +550,12 @@ export default {
         id: company.id,
       }));
 
-      console.log("Данные для слайдера:", sliderData);
+      console.log("Начальные данные для слайдера (все компании):", sliderData);
       return sliderData;
     };
 
     // 11. Обновление слайдера при изменении компаний в зоне видимости
-    const updateSliderData = () => {
-      // Всегда показываем все компании из demoCompany, независимо от зоны видимости
-      const newSliderData = companies.value.map((company) => ({
-        img: company.logo || "/img/placeholder.jpg",
-        name: company.name,
-        time: company.time || "",
-        address: company.address,
-        studio: company.studio || "",
-        rating: company.rating,
-        price: company.price,
-        phone: company.phone,
-        email: company.email,
-        website: company.website,
-        tags: company.tags || [],
-        extra: company.extra || [],
-        cardType: company.cardType || [],
-        sportType: company.sportType || [],
-        coordinates: company.coordinates,
-        id: company.id,
-      }));
-
-      // Обновляем cards через ref
-      cards.value = newSliderData;
-      console.log("Обновление данных слайдера:", newSliderData);
-      return newSliderData;
-    };
+    // Функция updateSliderData больше не нужна, так как обновление происходит в updateCompaniesInView
 
     // Остальные функции для слайдера
     const selectCompany = (company) => {
@@ -545,8 +572,51 @@ export default {
     };
 
     const updateCompaniesInView = () => {
-      // Упрощенная версия без проблемных операций
-      console.log("Обновление компаний в зоне видимости");
+      if (!mapInstance.value) return;
+
+      try {
+        const bounds = mapInstance.value.getBounds();
+        const filtered = companies.value.filter((company) => {
+          const [lng, lat] = company.coordinates;
+          return (
+            lng >= bounds[0][0] &&
+            lng <= bounds[1][0] &&
+            lat >= bounds[0][1] &&
+            lat <= bounds[1][1]
+          );
+        });
+
+        companiesInView.value = filtered;
+
+        // Обновляем слайдер только компаниями в зоне видимости
+        const newSliderData = filtered.map((company) => ({
+          img: company.logo || "/img/placeholder.jpg",
+          name: company.name,
+          time: company.time || "",
+          address: company.address,
+          studio: company.studio || "",
+          rating: company.rating,
+          price: company.price,
+          phone: company.phone,
+          email: company.email,
+          website: company.website,
+          tags: company.tags || [],
+          extra: company.extra || [],
+          cardType: company.cardType || [],
+          sportType: company.sportType || [],
+          coordinates: company.coordinates,
+          id: company.id,
+        }));
+
+        cards.value = newSliderData;
+        console.log(`Компаний в зоне видимости: ${filtered.length}`);
+        console.log(
+          "Обновлен слайдер с компаниями в зоне видимости:",
+          newSliderData
+        );
+      } catch (error) {
+        console.error("Ошибка обновления компаний в зоне видимости:", error);
+      }
     };
 
     const onImageError = (event) => {
@@ -623,6 +693,7 @@ export default {
       forceCenterOnMoscow,
       testMarkers, // Добавляем функцию тестирования
       forceAddMarkers, // Добавляем функцию принудительного добавления маркеров
+      forceUpdateSlider, // Добавляем функцию принудительного обновления слайдера
     };
   },
 };
