@@ -9,6 +9,7 @@
       :typeSlider="'map'"
       :class="'slider-map slider-swiper'"
       @slide-click="onSlideClick"
+      @slide-change="onSlideChange"
     />
 
     <!-- Кнопка центрирования на Москве -->
@@ -34,83 +35,11 @@
     >
       🏛️ Москва
     </button>
-
-    <!-- Кнопка для тестирования маркеров -->
-    <button
-      class="test-markers-btn"
-      @click="testMarkers"
-      title="Тестировать маркеры"
-      style="
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        z-index: 1000;
-        background: #fff;
-        border: 2px solid #28a745;
-        border-radius: 8px;
-        padding: 8px 16px;
-        font-size: 14px;
-        font-weight: bold;
-        color: #28a745;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      "
-    >
-      🔍 Тест
-    </button>
-
-    <!-- Кнопка для принудительного добавления маркеров -->
-    <button
-      class="force-markers-btn"
-      @click="forceAddMarkers"
-      title="Добавить маркеры"
-      style="
-        position: absolute;
-        top: 20px;
-        left: 120px;
-        z-index: 1000;
-        background: #fff;
-        border: 2px solid #dc3545;
-        border-radius: 8px;
-        padding: 8px 16px;
-        font-size: 14px;
-        font-weight: bold;
-        color: #dc3545;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      "
-    >
-      📍 Маркеры
-    </button>
-
-    <!-- Кнопка для принудительного обновления слайдера -->
-    <button
-      class="force-slider-btn"
-      @click="forceUpdateSlider"
-      title="Обновить слайдер"
-      style="
-        position: absolute;
-        top: 20px;
-        left: 220px;
-        z-index: 1000;
-        background: #fff;
-        border: 2px solid #ffc107;
-        border-radius: 8px;
-        padding: 8px 16px;
-        font-size: 14px;
-        font-weight: bold;
-        color: #ffc107;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      "
-    >
-      🔄 Слайдер
-    </button>
   </div>
 </template>
 
 <script>
-import { ref, onMounted, shallowRef } from "vue";
+import { ref, onMounted, shallowRef, onUnmounted } from "vue";
 import demoCompany from "../../demo/demoCompany";
 import Slider from "../../components/UI/TheSwiper.vue";
 
@@ -157,6 +86,8 @@ export default {
     const mapInstance = shallowRef(null);
     const userMarker = shallowRef(null);
     const companiesInView = ref([]);
+    const companyMarkers = ref(new Map()); // Добавляем Map для хранения маркеров
+    let updateTimeout = null; // Добавляем переменную для дебаунсинга обновлений
 
     // Координаты Москвы
     const moscowCoords = [55.755819, 37.617644];
@@ -306,8 +237,9 @@ export default {
         try {
           const userCoords = await getUserLocation();
           addUserMarker(userCoords);
+          console.log("Добавлена метка пользователя");
         } catch (error) {
-          console.log("Геолокация недоступна, используем Москву");
+          console.log("Геолокация недоступна, карта остается на Москве");
         }
       } catch (error) {
         console.error("Ошибка инициализации карты:", error);
@@ -413,7 +345,7 @@ export default {
         return;
       }
 
-      console.log("Добавляем метки компаний...");
+      console.log("Добавляем кастомные метки компаний...");
       console.log("Количество компаний:", companies.value.length);
       console.log("Данные компаний:", companies.value);
 
@@ -422,10 +354,20 @@ export default {
         return;
       }
 
+      // Очищаем старые маркеры перед добавлением новых
+      companyMarkers.value.forEach((marker) => {
+        try {
+          mapInstance.value.geoObjects.remove(marker);
+        } catch (error) {
+          console.error("Ошибка удаления старого маркера:", error);
+        }
+      });
+      companyMarkers.value.clear();
+
       companies.value.forEach((company, index) => {
         try {
           console.log(
-            `Добавляем маркер для компании ${index + 1}:`,
+            `Добавляем кастомный маркер для компании ${index + 1}:`,
             company.name,
             company.coordinates
           );
@@ -443,7 +385,41 @@ export default {
             return;
           }
 
-          // Создаем простой маркер для тестирования
+          // Создаем кастомный HTML для маркера
+          const markerHtml = `
+            <div class="custom-marker">
+              <div class="marker-content">
+                <div class="marker-logo">
+                  <img src="${company.logo || "/img/placeholder.jpg"}"
+                       alt="${company.name}"
+                       style="
+                         width: 100%;
+                         height: 100%;
+                         object-fit: cover;
+                         border-radius: 4px;
+                       "
+                       onerror="this.src='/img/placeholder.jpg'"
+                  />
+                </div>
+                <div class="marker-info">
+                  <div class="marker-name">${company.name}</div>
+                  <div class="marker-rating">★ ${company.rating || "0"}</div>
+                  ${
+                    company.price
+                      ? `<div class="marker-price">${company.price}</div>`
+                      : ""
+                  }
+                </div>
+              </div>
+              <div class="marker-tail"></div>
+            </div>
+          `;
+
+          // Создаем простой кастомный макет без сложных обработчиков
+          const CustomLayout =
+            window.ymaps.templateLayoutFactory.createClass(markerHtml);
+
+          // Создаем маркер с кастомным макетом
           const placemark = new window.ymaps.Placemark(
             company.coordinates,
             {
@@ -458,32 +434,65 @@ export default {
               `,
             },
             {
-              preset: "islands#blueDotIcon", // Используем стандартный маркер
+              iconLayout: "default#imageWithContent",
+              iconContentLayout: CustomLayout,
+              iconContentOffset: [0, 0],
+              iconContentSize: [150, 50],
             }
           );
 
-          // Добавляем обработчик клика
+          console.log("=== СОЗДАНИЕ МАРКЕРА ===");
+          console.log("Компания:", company.name);
+          console.log("Тип созданного placemark:", typeof placemark);
+          console.log("Созданный placemark:", placemark);
+          console.log(
+            "Есть ли getChildElement:",
+            typeof placemark.getChildElement
+          );
+          console.log(
+            "Есть ли getChildElement у placemark:",
+            placemark.getChildElement ? "ДА" : "НЕТ"
+          );
+
+          // Добавляем обработчик клика на маркер
           placemark.events.add("click", () => {
-            console.log("Клик по маркеру:", company.name);
+            console.log("Клик по кастомному маркеру:", company.name);
             selectCompany(company);
-            mapInstance.value.setCenter(company.coordinates, 15);
           });
 
+          // Сохраняем маркер в Map для последующего управления
+          companyMarkers.value.set(company.id, placemark);
+          console.log(
+            `Кастомный маркер для ${company.name} добавлен успешно с ID:`,
+            company.id
+          );
+          console.log("Тип сохраненного объекта:", typeof placemark);
+          console.log("Сохраненный объект:", placemark);
+          console.log(
+            "Есть ли getChildElement:",
+            typeof placemark.getChildElement
+          );
+
           mapInstance.value.geoObjects.add(placemark);
-          console.log(`Маркер для ${company.name} добавлен успешно`);
+          console.log(`Кастомный маркер для ${company.name} добавлен успешно`);
         } catch (error) {
           console.error(
-            "Ошибка добавления маркера для компании:",
+            "Ошибка добавления кастомного маркера для компании:",
             company.name,
             error
           );
         }
       });
 
-      console.log("Все маркеры добавлены");
+      console.log("Все кастомные маркеры добавлены");
+      console.log(
+        "Итоговое количество маркеров в Map:",
+        companyMarkers.value.size
+      );
+      console.log("Все ID маркеров:", Array.from(companyMarkers.value.keys()));
     };
 
-    // 9. Принудительное центрирование на Москве
+    // 9. Принудительное центрирование на Москве (только ручное)
     const forceCenterOnMoscow = () => {
       if (mapInstance.value) {
         console.log("Принудительное центрирование на Москве");
@@ -491,105 +500,74 @@ export default {
       }
     };
 
-    // 9.1. Функция для тестирования маркеров
-    const testMarkers = () => {
-      console.log("=== ТЕСТИРОВАНИЕ МАРКЕРОВ ===");
-      console.log("Карта инициализирована:", !!mapInstance.value);
-      console.log("Количество компаний:", companies.value.length);
-      console.log("Компании:", companies.value);
-
-      if (mapInstance.value && mapInstance.value.geoObjects) {
-        console.log(
-          "Количество объектов на карте:",
-          mapInstance.value.geoObjects.getLength()
-        );
-      }
+    const onImageError = (event) => {
+      event.target.src = "/img/logo.png";
     };
 
-    // 9.2. Функция для принудительного добавления маркеров
-    const forceAddMarkers = () => {
-      console.log("=== ПРИНУДИТЕЛЬНОЕ ДОБАВЛЕНИЕ МАРКЕРОВ ===");
-      if (mapInstance.value) {
-        addCompanyMarkers();
-      } else {
-        console.error("Карта не инициализирована");
-      }
+    // Обработчик клика по слайдеру
+    const onSlideClick = (slideData) => {
+      console.log("=== КЛИК ПО СЛАЙДЕРУ ===");
+      console.log("🎯 КЛИК ПО СЛАЙДЕРУ СРАБОТАЛ!");
+      console.log("Данные слайда:", slideData);
+      // Убираем автоматическое центрирование - карта должна центрироваться только при свайпе слайдера
     };
 
-    // 9.3. Функция для принудительного обновления слайдера
-    const forceUpdateSlider = () => {
-      console.log("=== ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ СЛАЙДЕРА ===");
-      if (mapInstance.value) {
-        updateCompaniesInView();
-      } else {
-        console.error("Карта не инициализирована");
-      }
-    };
+    // Обработчик изменения слайдера - добавляем класс active к маркеру
+    const onSlideChange = (slideData) => {
+      console.log("=== ОБРАБОТКА СВАЙПА СЛАЙДЕРА ===");
+      console.log("Полученные данные слайда:", slideData);
 
-    // 10. Инициализация слайдера с данными из demoCompany
-    const initSliderData = () => {
-      console.log("=== ИНИЦИАЛИЗАЦИЯ ДАННЫХ СЛАЙДЕРА ===");
-
-      // Показываем все компании изначально
-      const sliderData = companies.value.map((company) => ({
-        img: company.logo || "/img/placeholder.jpg",
-        name: company.name,
-        time: company.time || "",
-        address: company.address,
-        studio: company.studio || "",
-        rating: company.rating,
-        price: company.price,
-        phone: company.phone,
-        email: company.email,
-        website: company.website,
-        tags: company.tags || [],
-        extra: company.extra || [],
-        cardType: company.cardType || [],
-        sportType: company.sportType || [],
-        coordinates: company.coordinates,
-        id: company.id,
-      }));
-
-      console.log("Начальные данные для слайдера (все компании):", sliderData);
-      return sliderData;
-    };
-
-    // 11. Обновление слайдера при изменении компаний в зоне видимости
-    // Функция updateSliderData больше не нужна, так как обновление происходит в updateCompaniesInView
-
-    // Остальные функции для слайдера
-    const selectCompany = (company) => {
-      console.log("Выбрана компания:", company.name);
-      selectedCompany.value = company;
-      if (mapInstance.value && company.coordinates) {
+      if (slideData && slideData.id && mapInstance.value) {
         try {
-          mapInstance.value.setCenter(company.coordinates, 15);
-          console.log("Карта центрирована на компании:", company.name);
+          console.log("Выделяем маркер для компании ID:", slideData.id);
+
+          // Убираем класс active со всех маркеров
+          companyMarkers.value.forEach((marker, id) => {
+            try {
+              if (marker && marker.getElement) {
+                const markerElement = marker.getElement();
+                if (markerElement) {
+                  const customMarker =
+                    markerElement.querySelector(".custom-marker");
+                  if (customMarker) {
+                    customMarker.classList.remove("active");
+                  }
+                }
+              }
+            } catch (error) {
+              console.error(`Ошибка обработки маркера ID: ${id}`, error);
+            }
+          });
+
+          // Добавляем класс active к выбранному маркеру
+          const selectedMarker = companyMarkers.value.get(slideData.id);
+          if (selectedMarker && selectedMarker.getElement) {
+            const markerElement = selectedMarker.getElement();
+            if (markerElement) {
+              const customMarker =
+                markerElement.querySelector(".custom-marker");
+              if (customMarker) {
+                customMarker.classList.add("active");
+                console.log(
+                  `Добавлен класс active к маркеру ID: ${slideData.id}`
+                );
+              }
+            }
+          }
         } catch (error) {
-          console.error("Ошибка центрирования карты:", error);
+          console.error("Ошибка обработки свайпа слайдера:", error);
         }
       }
     };
 
-    const updateCompaniesInView = () => {
-      if (!mapInstance.value) return;
+    // Инициализация слайдера с данными из demoCompany
+    const initSliderData = () => {
+      console.log("=== ИНИЦИАЛИЗАЦИЯ ДАННЫХ СЛАЙДЕРА ===");
+      console.log("Исходные компании:", companies.value);
 
-      try {
-        const bounds = mapInstance.value.getBounds();
-        const filtered = companies.value.filter((company) => {
-          const [lng, lat] = company.coordinates;
-          return (
-            lng >= bounds[0][0] &&
-            lng <= bounds[1][0] &&
-            lat >= bounds[0][1] &&
-            lat <= bounds[1][1]
-          );
-        });
-
-        companiesInView.value = filtered;
-
-        // Обновляем слайдер только компаниями в зоне видимости
-        const newSliderData = filtered.map((company) => ({
+      // Показываем все компании изначально
+      const sliderData = companies.value.map((company, index) => {
+        const slideData = {
           img: company.logo || "/img/placeholder.jpg",
           name: company.name,
           time: company.time || "",
@@ -606,29 +584,77 @@ export default {
           sportType: company.sportType || [],
           coordinates: company.coordinates,
           id: company.id,
-        }));
+        };
 
-        cards.value = newSliderData;
-        console.log(`Компаний в зоне видимости: ${filtered.length}`);
-        console.log(
-          "Обновлен слайдер с компаниями в зоне видимости:",
-          newSliderData
-        );
-      } catch (error) {
-        console.error("Ошибка обновления компаний в зоне видимости:", error);
-      }
+        console.log(`Слайд ${index + 1}:`, slideData);
+        return slideData;
+      });
+
+      console.log("Начальные данные для слайдера (все компании):", sliderData);
+      console.log("Количество слайдов:", sliderData.length);
+      return sliderData;
     };
 
-    const onImageError = (event) => {
-      event.target.src = "/img/logo.png";
+    // Обновление слайдера при изменении компаний в зоне видимости
+    const updateCompaniesInView = () => {
+      if (!mapInstance.value) return;
+
+      // Добавляем дебаунсинг для предотвращения частых обновлений
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
+      }
+
+      updateTimeout = setTimeout(() => {
+        try {
+          const bounds = mapInstance.value.getBounds();
+          const filtered = companies.value.filter((company) => {
+            const [lng, lat] = company.coordinates;
+            return (
+              lng >= bounds[0][0] &&
+              lng <= bounds[1][0] &&
+              lat >= bounds[0][1] &&
+              lat <= bounds[1][1]
+            );
+          });
+
+          companiesInView.value = filtered;
+
+          // Обновляем слайдер только компаниями в зоне видимости
+          const newSliderData = filtered.map((company) => ({
+            img: company.logo || "/img/placeholder.jpg",
+            name: company.name,
+            time: company.time || "",
+            address: company.address,
+            studio: company.studio || "",
+            rating: company.rating,
+            price: company.price,
+            phone: company.phone,
+            email: company.email,
+            website: company.website,
+            tags: company.tags || [],
+            extra: company.extra || [],
+            cardType: company.cardType || [],
+            sportType: company.sportType || [],
+            coordinates: company.coordinates,
+            id: company.id,
+          }));
+
+          cards.value = newSliderData;
+          console.log(`Компаний в зоне видимости: ${filtered.length}`);
+          console.log(
+            "Обновлен слайдер с компаниями в зоне видимости:",
+            newSliderData
+          );
+        } catch (error) {
+          console.error("Ошибка обновления компаний в зоне видимости:", error);
+        }
+      }, 200); // Задержка 200мс для дебаунсинга
     };
 
-    // Обработчик клика по слайдеру
-    const onSlideClick = (slideData) => {
-      console.log("Клик по слайдеру:", slideData);
-      if (slideData.coordinates && mapInstance.value) {
-        mapInstance.value.setCenter(slideData.coordinates, 15);
-      }
+    // Функция выбора компании
+    const selectCompany = (company) => {
+      console.log("Выбрана компания:", company.name);
+      selectedCompany.value = company;
     };
 
     // Загрузка Yandex Maps API
@@ -661,11 +687,40 @@ export default {
 
         script.onerror = (error) => {
           console.error("Ошибка загрузки скрипта Яндекс.Карт:", error);
-          reject(new Error("Ошибка загрузки скрипта"));
+          console.warn("Возможно, запрос заблокирован блокировщиком рекламы");
+
+          // Попробуем альтернативный способ загрузки
+          setTimeout(() => {
+            if (window.ymaps) {
+              console.log("API загружен с задержкой");
+              window.ymaps.ready(() => {
+                console.log(
+                  "API Яндекс.Карт готов к использованию (альтернативный способ)"
+                );
+                resolve(window.ymaps);
+              });
+            } else {
+              console.error("API не загружен даже с задержкой");
+              reject(new Error("Ошибка загрузки скрипта"));
+            }
+          }, 2000);
         };
+
+        // Добавляем обработчик для отслеживания блокировки
+        script.addEventListener("error", (event) => {
+          console.warn("Скрипт заблокирован:", event);
+        });
 
         document.head.appendChild(script);
         console.log("Скрипт добавлен в DOM");
+
+        // Таймаут на случай, если скрипт не загрузится
+        setTimeout(() => {
+          if (!window.ymaps) {
+            console.error("Таймаут загрузки API");
+            reject(new Error("Таймаут загрузки API"));
+          }
+        }, 10000);
       });
     };
 
@@ -682,18 +737,23 @@ export default {
       }
     });
 
+    // Очистка таймаутов при размонтировании
+    onUnmounted(() => {
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
+      }
+    });
+
     return {
       companies,
-      cards, // Добавляем cards
+      cards,
       selectedCompany,
       selectCompany,
       companiesInView,
       onImageError,
       onSlideClick,
+      onSlideChange,
       forceCenterOnMoscow,
-      testMarkers, // Добавляем функцию тестирования
-      forceAddMarkers, // Добавляем функцию принудительного добавления маркеров
-      forceUpdateSlider, // Добавляем функцию принудительного обновления слайдера
     };
   },
 };
@@ -748,9 +808,9 @@ export default {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 150px;
+  bottom: 0;
   width: 100%;
-  z-index: 5;
+  z-index: 0;
   background-color: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   padding: 20px 0;
@@ -821,11 +881,17 @@ export default {
   cursor: pointer;
   transition: all 0.3s ease;
   border: 2px solid #007bff;
+  position: relative;
 
   &:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     border-color: #0056b3;
+  }
+
+  /* Стили для активного состояния */
+  &.active {
+    background-color: red !important;
   }
 
   .marker-content {
@@ -895,4 +961,9 @@ export default {
     font-size: 14px;
   }
 }
+// .custom-marker {
+//   &.active {
+//     background-color: red;
+//   }
+// }
 </style>

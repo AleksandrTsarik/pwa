@@ -12,6 +12,7 @@
     :breakpoints="options.breakpoints"
     :effect="options.effect"
     :mousewheel="options.mousewheel"
+    @slideChange="handleSlideChange"
   >
     <SwiperSlide v-for="(slide, i) in slider" :key="i">
       <div class="slider" v-if="typeSlider === 'map'">
@@ -142,6 +143,38 @@ export default {
     handleSlideClick(slide) {
       console.log("Клик по слайду:", slide);
       this.$emit("slide-click", slide);
+    },
+    handleSlideChange(swiper) {
+      console.log("=== SWIPER SLIDE CHANGE ===");
+      console.log("🎯 SWIPER СОБЫТИЕ СРАБОТАЛО!");
+      console.log("Активный индекс:", swiper.activeIndex);
+      console.log("Всего слайдов:", swiper.slides.length);
+      console.log("Данные слайдера:", this.slider);
+
+      // Получаем данные активного слайда
+      const activeSlide = this.slider[swiper.activeIndex];
+
+      console.log("Активный слайд:", activeSlide);
+
+      if (
+        activeSlide &&
+        activeSlide.coordinates &&
+        activeSlide.coordinates.length === 2
+      ) {
+        console.log(
+          "Центрируем карту на:",
+          activeSlide.name,
+          activeSlide.coordinates
+        );
+        // Эмитим событие для центрирования карты
+        this.$emit("slide-change", activeSlide);
+        console.log("🎯 СОБЫТИЕ slide-change ЭМИТИРОВАНО!");
+      } else {
+        console.log(
+          "Активный слайд не имеет координат или данных:",
+          activeSlide
+        );
+      }
     },
   },
   setup() {
