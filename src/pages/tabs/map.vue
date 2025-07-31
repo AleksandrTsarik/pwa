@@ -4,6 +4,7 @@
 
     <!-- Слайдер с данными из demoCompany -->
     <slider
+      v-if="cards.length > 0"
       :options="optionsSlider"
       :slider="cards"
       :typeSlider="'map'"
@@ -530,7 +531,12 @@ export default {
             id: company.id,
           }));
 
-          cards.value = newSliderData;
+          // Если нет компаний в зоне видимости, очищаем слайдер
+          if (newSliderData.length === 0) {
+            cards.value = [];
+          } else {
+            cards.value = newSliderData;
+          }
         } catch (error) {
           // Ошибка обновления компаний в зоне видимости
         }
