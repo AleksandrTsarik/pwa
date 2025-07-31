@@ -1,6 +1,16 @@
 <template>
   <div class="map">
     <div id="yandexMap" class="map-container"></div>
+
+    <!-- Кнопка для центрирования на Москве -->
+    <button
+      @click="forceCenterOnMoscow"
+      class="moscow-center-btn"
+      title="Центрировать на Москве"
+    >
+      🏛️ Москва
+    </button>
+
     <div
       class="company-swiper"
       v-if="companiesInView.length > 0"
@@ -40,201 +50,392 @@
           </div>
         </div>
       </div>
-      <div v-if="companiesInView.length > 1" class="company-pagination">
-        <span
-          v-for="(company, idx) in companiesInView"
-          :key="company.id"
-          :class="{ dot: true, active: idx === activeIndex }"
-          @click="goTo(idx)"
-        ></span>
-      </div>
+      <slider
+        :options="optionsSlider"
+        :slider="cards"
+        :typeSlider="'map'"
+        :class="'slider-map slider-swiper'"
+      />
     </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted, shallowRef } from "vue";
-// Предполагается, что demoCompany содержит массив company с нужными полями
 import demoCompany from "../../demo/demoCompany";
+import Slider from "../../components/UI/TheSwiper.vue";
 
 export default {
+  components: {
+    Slider,
+  },
+  data() {
+    return {
+      optionsSlider: {
+        loop: true,
+        centeredSlides: false,
+        spaceBetween: 20,
+        pagination: false,
+        modules: "modules",
+        mousewheel: false,
+        breakpoints: {
+          1023: {
+            slidesPerView: 4,
+          },
+          575: {
+            slidesPerView: 2,
+          },
+          320: {
+            slidesPerView: 1,
+            slidesPerGroup: 1,
+          },
+        },
+        navigation: true,
+      },
+      cards: [
+        {
+          img: "",
+          name: "",
+          time: "",
+          address: "",
+          studio: "",
+        },
+      ],
+    };
+  },
   name: "MapDemo",
   setup() {
-    // Используем demoCompany для списка компаний
+    // Основные переменные
     const companies = ref(
-      demoCompany.company.map((c, idx) => ({
+      demoCompany.cities[0].company.map((c, idx) => ({
         ...c,
         id: idx + 1,
-        // Добавим примерные данные, если их нет в demoCompany
-        image: c.image || null, // Может быть null, тогда используется заглушка
-        price: c.price || "Цена не указана",
-        rating: c.rating || null, // Может быть null
+        image: c.logo || null,
+        price: c.price || null,
+        rating: c.rating || null,
+        logo: c.logo || "/img/placeholder.jpg",
+        marker: c.marker || "/img/marker.png",
       }))
     );
     const selectedCompany = ref(null);
     const mapInstance = shallowRef(null);
-    const userMarker = shallowRef(null); // Для хранения метки геолокации
+    const userMarker = shallowRef(null);
     const companiesInView = ref([]);
     const activeIndex = ref(0);
     let startX = 0;
     let deltaX = 0;
     let dragging = false;
 
-    // --- Новый класс для кастомной иконки ---
-    let CustomIconLayout;
+    // Координаты Москвы
+    const moscowCoords = [55.755819, 37.617644];
 
-    // Инициализация карты
-    const initMap = () => {
-      // Убедимся, что API загружено
-      if (!window.ymaps) {
-        console.error("Yandex Maps API not loaded");
-        return;
+    // 1. Проверка устройства и геолокации
+    const checkDeviceAndGeolocation = async () => {
+      console.log("=== ПРОВЕРКА УСТРОЙСТВА И ГЕОЛОКАЦИИ ===");
+
+      // Проверка на мобильное устройство
+      const isMobile =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+      console.log("Мобильное устройство:", isMobile);
+
+      // Проверка поддержки геолокации
+      if (!navigator.geolocation) {
+        console.log("Геолокация не поддерживается браузером");
+        return { hasGeolocation: false, isMobile };
       }
 
-      // --- Определение кастомного макета иконки ---
-      CustomIconLayout = window.ymaps.templateLayoutFactory.createClass(
-        `
-        <div class="custom-placemark" style="position: relative; transform: translate(-50%, -100%);">
-          <div class="custom-placemark__image-container">
-            <img src="{{ properties.image }}" alt="{{ properties.name }}" class="custom-placemark__image" onerror="this.src='/img/placeholder-icon.jpg'; this.onerror=null;">
-            <div class="custom-placemark__price">{{ properties.price }}</div>
-          </div>
-          <div class="custom-placemark__info">
-            <div class="custom-placemark__name">{{ properties.name }}</div>
-            <div class="custom-placemark__rating" v-if="properties.rating">★ {{ properties.rating }}</div>
-          </div>
-          <div class="custom-placemark__tail"></div>
-        </div>
-        `,
-        {
-          // Переопределяем метод build, чтобы добавить обработчики событий
-          build: function () {
-            // Вызываем родительский метод build
-            CustomIconLayout.superclass.build.call(this);
-            // Получаем ссылку на DOM-элемент метки
-            const element =
-              this.getParentElement().getElementsByClassName(
-                "custom-placemark"
-              )[0];
-            if (element) {
-              // Добавляем обработчик клика на саму метку
-              element.onclick = () => {
-                const companyId = this.getData().properties.get("companyId");
-                const company = companies.value.find((c) => c.id === companyId);
-                if (company) {
-                  selectCompany(company);
-                  mapInstance.value.setCenter(company.coordinates);
-                }
-              };
-            }
-          },
-          // Переопределяем метод clear, чтобы очистить обработчики событий
-          clear: function () {
-            const element =
-              this.getParentElement().getElementsByClassName(
-                "custom-placemark"
-              )[0];
-            if (element) {
-              element.onclick = null;
-            }
-            // Вызываем родительский метод clear
-            CustomIconLayout.superclass.clear.call(this);
-          },
+      // Проверка разрешения на геолокацию
+      let permission = "prompt";
+      if (navigator.permissions) {
+        try {
+          const permissionResult = await navigator.permissions.query({
+            name: "geolocation",
+          });
+          permission = permissionResult.state;
+        } catch (error) {
+          console.log("Ошибка проверки разрешения:", error);
         }
-      );
+      }
+      console.log("Разрешение геолокации:", permission);
 
-      mapInstance.value = new window.ymaps.Map("yandexMap", {
-        center: [37.6176, 55.7558], // Начальный центр (Москва)
-        zoom: 12,
-      });
+      return { hasGeolocation: true, permission, isMobile };
+    };
 
-      // При первой загрузке карты запрашиваем геолокацию
-      if (navigator.geolocation) {
+    // 2. Запрос геолокации пользователя
+    const getUserLocation = () => {
+      return new Promise((resolve, reject) => {
+        const options = {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000,
+        };
+
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            const userCoords = [
+            const coords = [
               position.coords.longitude,
               position.coords.latitude,
             ];
-            mapInstance.value.setCenter([userCoords[0], userCoords[1]], 15);
-            // Добавляем метку пользователя
-            userMarker.value = new window.ymaps.Placemark(
-              [userCoords[0], userCoords[1]],
-              {
-                hintContent: "Вы здесь",
-                balloonContent: "Ваше текущее местоположение",
-              },
-              {
-                preset: "islands#blueCircleDotIcon",
-              }
-            );
-            mapInstance.value.geoObjects.add(userMarker.value);
+            console.log("Получены координаты пользователя:", coords);
+            resolve(coords);
           },
           (error) => {
-            // Пользователь отказал или ошибка — оставляем дефолтный центр Москвы
-            console.warn("Геолокация не разрешена или ошибка:", error);
-            mapInstance.value.setCenter([37.6176, 55.7558], 12);
-          }
-        );
-      } else {
-        // Если геолокация не поддерживается, также центр Москвы
-        mapInstance.value.setCenter([37.6176, 55.7558], 12);
-      }
-
-      // Добавляем метки компаний
-      addCompanyMarkers();
-      // Подписываемся на событие изменения границ карты
-      mapInstance.value.events.add("boundschange", updateCompaniesInView);
-      updateCompaniesInView();
-    };
-
-    // Добавление меток компаний на карту с кастомным макетом
-    const addCompanyMarkers = () => {
-      if (!mapInstance.value || !CustomIconLayout) return;
-
-      // Очищаем предыдущие метки, если они были
-      mapInstance.value.geoObjects.removeAll();
-
-      // Добавляем заново метку пользователя, если она была
-      if (userMarker.value) {
-        mapInstance.value.geoObjects.add(userMarker.value);
-      }
-
-      companies.value.forEach((company) => {
-        const placemark = new window.ymaps.Placemark(
-          company.coordinates,
-          {
-            // Данные для макета
-            companyId: company.id,
-            name: company.name,
-            address: company.address,
-            image: company.image || "/img/placeholder-icon.jpg", // Используем заглушку
-            price: company.price || "Цена",
-            rating: company.rating,
-            // Для стандартного hintContent (на случай проблем с кастомным)
-            hintContent: company.name,
+            console.log("Ошибка получения геолокации:", error.message);
+            reject(error);
           },
-          {
-            // Указываем кастомный макет иконки
-            iconLayout: CustomIconLayout,
-            // Отключаем стандартный балун, если не нужен
-            // balloonContent: `<strong>${company.name}</strong><br>${company.address}`,
-            // Отключаем стандартную иконку
-            iconShape: null, // Или определите форму, если нужно
-          }
+          options
         );
-
-        // Добавляем обработчик клика на метку (альтернативный способ)
-        // placemark.events.add("click", () => {
-        //   selectCompany(company);
-        //   mapInstance.value.setCenter(company.coordinates);
-        // });
-
-        mapInstance.value.geoObjects.add(placemark);
       });
     };
 
-    // Выбор компании (из списка или кликом по метке)
+    // 3. Проверка совпадения с demoCompany городами
+    const checkUserInDemoCities = (userCoords) => {
+      console.log("=== ПРОВЕРКА СОВПАДЕНИЯ С DEMO ГОРОДАМИ ===");
+      const [userLng, userLat] = userCoords;
+
+      for (const city of demoCompany.cities || []) {
+        console.log("Проверяем город:", city.cityName);
+
+        if (city.cityLocaltion && city.cityLocaltion.length === 2) {
+          const [cityLat, cityLng] = city.cityLocaltion;
+          console.log("Координаты города", city.cityName, ":", [
+            cityLat,
+            cityLng,
+          ]);
+
+          // Проверяем расстояние (примерно 50 км)
+          const distance = Math.sqrt(
+            Math.pow(userLng - cityLng, 2) + Math.pow(userLat - cityLat, 2)
+          );
+          console.log("Расстояние до города", city.cityName, ":", distance);
+
+          if (distance < 0.5) {
+            console.log("✅ Пользователь находится в городе:", city.cityName);
+            return {
+              inDemoCity: true,
+              city: city,
+              coordinates: [cityLng, cityLat],
+            };
+          }
+        }
+      }
+
+      console.log("❌ Пользователь не находится в demo городах");
+      return {
+        inDemoCity: false,
+        city: null,
+        coordinates: null,
+      };
+    };
+
+    // 4. Инициализация карты
+    const initMap = async () => {
+      console.log("=== ИНИЦИАЛИЗАЦИЯ КАРТЫ ===");
+
+      if (!window.ymaps) {
+        console.error("Yandex Maps API не загружен");
+        return;
+      }
+
+      try {
+        // Создаем карту с центром на Москве
+        mapInstance.value = new window.ymaps.Map("yandexMap", {
+          center: moscowCoords,
+          zoom: 12,
+          controls: ["zoomControl", "fullscreenControl"],
+        });
+
+        console.log("Карта создана успешно");
+
+        // Добавляем метки компаний
+        addCompanyMarkers();
+
+        // Запускаем проверку геолокации
+        await checkAndCenterMap();
+
+        // Добавляем обработчик изменения границ карты
+        mapInstance.value.events.add("boundschange", updateCompaniesInView);
+      } catch (error) {
+        console.error("Ошибка инициализации карты:", error);
+      }
+    };
+
+    // 5. Основная функция проверки и центрирования
+    const checkAndCenterMap = async () => {
+      console.log("=== ПРОВЕРКА И ЦЕНТРИРОВАНИЕ КАРТЫ ===");
+
+      // 1. Проверяем устройство и геолокацию
+      const deviceInfo = await checkDeviceAndGeolocation();
+      console.log("Информация об устройстве:", deviceInfo);
+
+      // Если геолокация не поддерживается, центрируем на Москве
+      if (!deviceInfo.hasGeolocation) {
+        console.log("Геолокация не поддерживается, центрируем на Москве");
+        mapInstance.value.setCenter(moscowCoords, 12);
+        return;
+      }
+
+      // Если разрешение запрещено
+      if (deviceInfo.permission === "denied") {
+        console.log("Геолокация запрещена пользователем");
+
+        // На мобильном предлагаем включить
+        if (deviceInfo.isMobile) {
+          const enableGeolocation = confirm(
+            "Для лучшего отображения карты включите геолокацию в настройках. Продолжить без геолокации?"
+          );
+          if (!enableGeolocation) {
+            // Пользователь хочет включить геолокацию
+            try {
+              const userCoords = await getUserLocation();
+              await processUserLocation(userCoords);
+            } catch (error) {
+              console.log("Не удалось получить геолокацию после разрешения");
+              mapInstance.value.setCenter(moscowCoords, 12);
+            }
+            return;
+          }
+        }
+
+        // Центрируем на Москве
+        mapInstance.value.setCenter(moscowCoords, 12);
+        return;
+      }
+
+      // Запрашиваем геолокацию
+      try {
+        const userCoords = await getUserLocation();
+        await processUserLocation(userCoords);
+      } catch (error) {
+        console.log("Ошибка получения геолокации, центрируем на Москве");
+        mapInstance.value.setCenter(moscowCoords, 12);
+      }
+    };
+
+    // 6. Обработка полученной геолокации
+    const processUserLocation = async (userCoords) => {
+      console.log("=== ОБРАБОТКА ГЕОЛОКАЦИИ ===");
+
+      // Проверяем совпадение с demo городами
+      const locationCheck = checkUserInDemoCities(userCoords);
+
+      if (locationCheck.inDemoCity) {
+        // Пользователь в demo городе - центрируем на этом городе
+        console.log("Центрируем карту на городе:", locationCheck.city.cityName);
+        mapInstance.value.setCenter(locationCheck.coordinates, 15);
+      } else {
+        // Пользователь не в demo городах - центрируем на Москве
+        console.log("Пользователь не в demo городах, центрируем на Москве");
+        mapInstance.value.setCenter(moscowCoords, 12);
+      }
+
+      // Добавляем метку пользователя
+      addUserMarker(userCoords);
+    };
+
+    // 7. Добавление метки пользователя
+    const addUserMarker = (coords) => {
+      if (userMarker.value) {
+        mapInstance.value.geoObjects.remove(userMarker.value);
+      }
+
+      userMarker.value = new window.ymaps.Placemark(
+        coords,
+        {
+          hintContent: "Вы здесь",
+          balloonContent: "Ваше текущее местоположение",
+        },
+        {
+          preset: "islands#blueCircleDotIcon",
+        }
+      );
+      mapInstance.value.geoObjects.add(userMarker.value);
+    };
+
+    // 8. Добавление меток компаний
+    const addCompanyMarkers = () => {
+      if (!mapInstance.value) return;
+
+      console.log("Добавляем кастомные метки компаний...");
+
+      companies.value.forEach((company) => {
+        try {
+          // Создаем кастомный HTML для маркера
+          const markerContent = `
+            <div class="custom-marker" data-company-id="${company.id}">
+              <div class="marker-content">
+                <div class="marker-logo">
+                  <img src="${company.logo || "/img/placeholder.jpg"}" 
+                       alt="${company.name}" 
+                       onerror="this.src='/img/logo.png'; this.onerror=null;">
+                </div>
+                <div class="marker-info">
+                  <div class="marker-name">${company.name}</div>
+                  <div class="marker-rating">★ ${company.rating || "0"}</div>
+                  <div class="marker-price">${company.price || ""}</div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          // Создаем кастомный макет для маркера
+          const CustomMarkerLayout =
+            window.ymaps.templateLayoutFactory.createClass(markerContent, {
+              build: function () {
+                CustomMarkerLayout.superclass.build.call(this);
+                this.getDataElement()
+                  .querySelector(".custom-marker")
+                  .addEventListener("click", () => {
+                    console.log("Клик по кастомному маркеру:", company.name);
+                    selectCompany(company);
+                    mapInstance.value.setCenter(company.coordinates, 15);
+                  });
+              },
+            });
+
+          // Создаем маркер с кастомным макетом
+          const placemark = new window.ymaps.Placemark(
+            company.coordinates,
+            {
+              hintContent: company.name,
+              balloonContent: `
+                <div class="marker-balloon">
+                  <h3>${company.name}</h3>
+                  <p>${company.address}</p>
+                  <p>Рейтинг: ★ ${company.rating || "0"}</p>
+                  <p>Цена: ${company.price || "Не указана"}</p>
+                </div>
+              `,
+            },
+            {
+              iconLayout: CustomMarkerLayout,
+              iconOffset: [-25, -25], // Центрируем маркер
+              iconContentOffset: [0, 0],
+            }
+          );
+
+          mapInstance.value.geoObjects.add(placemark);
+        } catch (error) {
+          console.error(
+            "Ошибка добавления кастомного маркера для компании:",
+            company.name,
+            error
+          );
+        }
+      });
+    };
+
+    // 9. Принудительное центрирование на Москве
+    const forceCenterOnMoscow = () => {
+      if (mapInstance.value) {
+        console.log("Принудительное центрирование на Москве");
+        mapInstance.value.setCenter(moscowCoords, 12);
+      }
+    };
+
+    // Остальные функции для слайдера
     const selectCompany = (company) => {
       selectedCompany.value = company;
       if (mapInstance.value) {
@@ -242,69 +443,33 @@ export default {
       }
     };
 
-    // Получение местоположения пользователя
-    const getUserLocation = () => {
-      if (!mapInstance.value) return;
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const userCoords = [
-              position.coords.longitude,
-              position.coords.latitude,
-            ];
-            // Обратите внимание: Яндекс.Карты используют [долгота, широта]
-            // Центрируем карту на местоположении пользователя
-            mapInstance.value.setCenter([userCoords[0], userCoords[1]], 15);
-            // Добавляем или обновляем метку пользователя
-            if (userMarker.value) {
-              userMarker.value.geometry.setCoordinates([
-                userCoords[0],
-                userCoords[1],
-              ]);
-            } else {
-              userMarker.value = new window.ymaps.Placemark(
-                [userCoords[0], userCoords[1]],
-                {
-                  hintContent: "Вы здесь",
-                  balloonContent: "Ваше текущее местоположение",
-                },
-                {
-                  preset: "islands#blueCircleDotIcon", // Предустановленная иконка
-                }
-              );
-              mapInstance.value.geoObjects.add(userMarker.value);
-            }
-          },
-          (error) => {
-            console.error("Ошибка получения геолокации:", error);
-            alert("Не удалось получить ваше местоположение.");
-          }
-        );
-      } else {
-        alert("Геолокация не поддерживается вашим браузером.");
-      }
-    };
-
-    // Фильтрация компаний по зоне видимости карты
     const updateCompaniesInView = () => {
       if (!mapInstance.value) return;
-      const bounds = mapInstance.value.getBounds(); // [[sw_lng, sw_lat], [ne_lng, ne_lat]]
-      const filtered = companies.value.filter((company) => {
-        const [lng, lat] = company.coordinates;
-        return (
-          lng >= bounds[0][0] &&
-          lng <= bounds[1][0] &&
-          lat >= bounds[0][1] &&
-          lat <= bounds[1][1]
-        );
-      });
-      companiesInView.value = filtered;
-      if (activeIndex.value >= filtered.length) {
-        activeIndex.value = 0;
+
+      try {
+        const bounds = mapInstance.value.getBounds();
+        const filtered = companies.value.filter((company) => {
+          const [lng, lat] = company.coordinates;
+          return (
+            lng >= bounds[0][0] &&
+            lng <= bounds[1][0] &&
+            lat >= bounds[0][1] &&
+            lat <= bounds[1][1]
+          );
+        });
+
+        companiesInView.value = filtered;
+
+        if (activeIndex.value >= filtered.length) {
+          activeIndex.value = 0;
+        }
+
+        console.log(`Компаний в зоне видимости: ${filtered.length}`);
+      } catch (error) {
+        console.error("Ошибка обновления компаний в зоне видимости:", error);
       }
     };
 
-    // Слайдер: стили для карточки
     const cardStyle = (idx) => {
       if (idx === activeIndex.value) {
         return {
@@ -327,7 +492,6 @@ export default {
       activeIndex.value = idx;
     };
 
-    // Свайп тач
     const onTouchStart = (e) => {
       if (companiesInView.value.length <= 1) return;
       dragging = true;
@@ -353,7 +517,6 @@ export default {
       deltaX = 0;
     };
 
-    // Свайп мышью
     const onMouseDown = (e) => {
       if (companiesInView.value.length <= 1) return;
       dragging = true;
@@ -379,29 +542,45 @@ export default {
       deltaX = 0;
     };
 
-    // Обработка ошибки загрузки изображения в карточке
     const onImageError = (event) => {
-      event.target.src = "/img/placeholder.jpg"; // Путь к вашей заглушке
+      event.target.src = "/img/logo.png";
     };
 
     // Загрузка Yandex Maps API
     const loadYandexMapScript = () => {
       return new Promise((resolve, reject) => {
+        console.log("Загрузка Яндекс.Карт API...");
+
         if (window.ymaps) {
+          console.log("API уже загружен");
           resolve(window.ymaps);
           return;
         }
+
         const script = document.createElement("script");
         script.src =
-          "https://api-maps.yandex.ru/2.1/?apikey=ВАШ_API_КЛЮЧ&lang=ru_RU"; // Замените ВАШ_API_КЛЮЧ на ваш ключ
+          "https://api-maps.yandex.ru/2.1/?apikey=3dc07a98-540b-4338-b92a-1e358928cde6&lang=ru_RU";
+
         script.onload = () => {
-          window.ymaps.ready(() => {
-            resolve(window.ymaps);
-          });
+          console.log("Скрипт Яндекс.Карт загружен");
+          if (window.ymaps) {
+            window.ymaps.ready(() => {
+              console.log("API Яндекс.Карт готов к использованию");
+              resolve(window.ymaps);
+            });
+          } else {
+            console.error("window.ymaps не найден после загрузки скрипта");
+            reject(new Error("API не инициализирован"));
+          }
         };
-        script.onerror = () =>
-          reject(new Error("Ошибка загрузки скрипта Яндекс.Карт"));
+
+        script.onerror = (error) => {
+          console.error("Ошибка загрузки скрипта Яндекс.Карт:", error);
+          reject(new Error("Ошибка загрузки скрипта"));
+        };
+
         document.head.appendChild(script);
+        console.log("Скрипт добавлен в DOM");
       });
     };
 
@@ -418,7 +597,6 @@ export default {
       companies,
       selectedCompany,
       selectCompany,
-      getUserLocation,
       companiesInView,
       activeIndex,
       cardStyle,
@@ -429,7 +607,8 @@ export default {
       onMouseDown,
       onMouseMove,
       onMouseUp,
-      onImageError, // Добавляем метод обработки ошибки изображения
+      onImageError,
+      forceCenterOnMoscow,
     };
   },
 };
@@ -440,14 +619,43 @@ export default {
   overflow: hidden;
   position: relative;
   margin-bottom: -60px;
-
-  /* height: 100vh;
-  position: relative; */
+  width: 100%;
+  height: 100vh;
 }
 
 .map-container {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  background: #f0f0f0;
+}
+
+.moscow-center-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: #fff;
+  border: 2px solid #007bff;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #007bff;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.moscow-center-btn:hover {
+  background: #007bff;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.moscow-center-btn:active {
+  transform: translateY(0);
 }
 
 .company-swiper {
@@ -553,52 +761,38 @@ export default {
 <!-- Добавляем стили для кастомной метки вне scoped стилей -->
 <style lang="scss">
 /* Стили для кастомной метки на карте */
-.custom-placemark {
+.marker {
   position: relative;
-  width: 120px; /* Ширина метки */
+  display: block;
   background: white;
+  border: solid 1px;
   border-radius: 6px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  width: 150px;
   cursor: pointer;
-  font-family: Arial, sans-serif;
-  font-size: 12px;
   z-index: 100; /* Высокий z-index для метки */
+  display: grid;
+  grid-template-columns: 20px auto;
+  gap: 10px;
   &__image-container {
     position: relative;
     width: 100%;
-    height: 60px; /* Высота контейнера изображения */
-    border-radius: 6px 6px 0 0;
-    overflow: hidden;
+    display: block;
+    background: white;
+    border: solid 1px;
   }
   &__image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
   }
   &__price {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-weight: bold;
-    font-size: 11px;
   }
   &__info {
-    padding: 6px;
   }
   &__name {
-    font-weight: bold;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
   }
   &__rating {
-    color: #ffc107;
-    font-size: 11px;
+    white-space: nowrap;
   }
   &__tail {
     position: absolute;
@@ -610,6 +804,92 @@ export default {
     border-left: 6px solid transparent;
     border-right: 6px solid transparent;
     border-top: 6px solid white;
+  }
+}
+
+/* Стили для кастомных маркеров */
+.custom-marker {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  min-width: 120px;
+  max-width: 150px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid #007bff;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-color: #0056b3;
+  }
+
+  .marker-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .marker-logo {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+  }
+
+  .marker-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .marker-name {
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .marker-rating {
+    font-size: 10px;
+    color: #ffc107;
+    font-weight: bold;
+    margin-bottom: 2px;
+  }
+
+  .marker-price {
+    font-size: 10px;
+    color: #28a745;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Стили для балуна маркера */
+.marker-balloon {
+  padding: 10px;
+
+  h3 {
+    margin: 0 0 8px 0;
+    color: #333;
+    font-size: 16px;
+  }
+
+  p {
+    margin: 4px 0;
+    color: #666;
+    font-size: 14px;
   }
 }
 </style>
