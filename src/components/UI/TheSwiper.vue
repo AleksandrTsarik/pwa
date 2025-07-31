@@ -145,16 +145,7 @@ export default {
       this.$emit("slide-click", slide);
     },
     handleSlideChange(swiper) {
-      console.log("=== SWIPER SLIDE CHANGE ===");
-      console.log("🎯 SWIPER СОБЫТИЕ СРАБОТАЛО!");
-      console.log("Активный индекс:", swiper.activeIndex);
-      console.log("Всего слайдов:", swiper.slides.length);
-      console.log("Данные слайдера:", this.slider);
-
-      // Получаем данные активного слайда
       const activeSlide = this.slider[swiper.activeIndex];
-
-      console.log("Активный слайд:", activeSlide);
 
       if (
         activeSlide &&

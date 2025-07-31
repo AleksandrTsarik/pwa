@@ -94,18 +94,14 @@ export default {
 
     // 1. Проверка устройства и геолокации
     const checkDeviceAndGeolocation = async () => {
-      console.log("=== ПРОВЕРКА УСТРОЙСТВА И ГЕОЛОКАЦИИ ===");
-
       // Проверка на мобильное устройство
       const isMobile =
         /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
           navigator.userAgent
         );
-      console.log("Мобильное устройство:", isMobile);
 
       // Проверка поддержки геолокации
       if (!navigator.geolocation) {
-        console.log("Геолокация не поддерживается браузером");
         return { hasGeolocation: false, isMobile };
       }
 
@@ -118,10 +114,9 @@ export default {
           });
           permission = permissionResult.state;
         } catch (error) {
-          console.log("Ошибка проверки разрешения:", error);
+          // Ошибка проверки разрешения
         }
       }
-      console.log("Разрешение геолокации:", permission);
 
       return { hasGeolocation: true, permission, isMobile };
     };
@@ -141,11 +136,9 @@ export default {
               position.coords.longitude,
               position.coords.latitude,
             ];
-            console.log("Получены координаты пользователя:", coords);
             resolve(coords);
           },
           (error) => {
-            console.log("Ошибка получения геолокации:", error.message);
             reject(error);
           },
           options
@@ -155,27 +148,18 @@ export default {
 
     // 3. Проверка совпадения с demoCompany городами
     const checkUserInDemoCities = (userCoords) => {
-      console.log("=== ПРОВЕРКА СОВПАДЕНИЯ С DEMO ГОРОДАМИ ===");
       const [userLng, userLat] = userCoords;
 
       for (const city of demoCompany.cities || []) {
-        console.log("Проверяем город:", city.cityName);
-
         if (city.cityLocaltion && city.cityLocaltion.length === 2) {
           const [cityLat, cityLng] = city.cityLocaltion;
-          console.log("Координаты города", city.cityName, ":", [
-            cityLat,
-            cityLng,
-          ]);
 
           // Проверяем расстояние (примерно 50 км)
           const distance = Math.sqrt(
             Math.pow(userLng - cityLng, 2) + Math.pow(userLat - cityLat, 2)
           );
-          console.log("Расстояние до города", city.cityName, ":", distance);
 
           if (distance < 0.5) {
-            console.log("✅ Пользователь находится в городе:", city.cityName);
             return {
               inDemoCity: true,
               city: city,
@@ -185,7 +169,6 @@ export default {
         }
       }
 
-      console.log("❌ Пользователь не находится в demo городах");
       return {
         inDemoCity: false,
         city: null,
@@ -195,10 +178,7 @@ export default {
 
     // 4. Инициализация карты
     const initMap = async () => {
-      console.log("=== ИНИЦИАЛИЗАЦИЯ КАРТЫ ===");
-
       if (!window.ymaps) {
-        console.error("Yandex Maps API не загружен");
         return;
       }
 
@@ -210,25 +190,19 @@ export default {
           controls: ["zoomControl", "fullscreenControl"],
         });
 
-        console.log("Карта создана успешно");
-
         // Добавляем метки компаний
         addCompanyMarkers();
 
         // Проверяем что маркеры добавились
         setTimeout(() => {
           if (mapInstance.value && mapInstance.value.geoObjects) {
-            console.log(
-              "Количество объектов на карте:",
-              mapInstance.value.geoObjects.getLength()
-            );
+            // Маркеры добавлены
           }
         }, 1000);
 
         // Инициализируем данные слайдера
         const initialSliderData = initSliderData();
         cards.value = initialSliderData;
-        console.log("Начальные данные слайдера:", initialSliderData);
 
         // Добавляем обработчик изменения границ карты для синхронизации со слайдером
         mapInstance.value.events.add("boundschange", updateCompaniesInView);
@@ -237,34 +211,27 @@ export default {
         try {
           const userCoords = await getUserLocation();
           addUserMarker(userCoords);
-          console.log("Добавлена метка пользователя");
         } catch (error) {
-          console.log("Геолокация недоступна, карта остается на Москве");
+          // Геолокация недоступна, карта остается на Москве
         }
       } catch (error) {
-        console.error("Ошибка инициализации карты:", error);
+        // Ошибка инициализации карты
       }
     };
 
     // 5. Основная функция проверки и центрирования
     const checkAndCenterMap = async () => {
-      console.log("=== ПРОВЕРКА И ЦЕНТРИРОВАНИЕ КАРТЫ ===");
-
       // 1. Проверяем устройство и геолокацию
       const deviceInfo = await checkDeviceAndGeolocation();
-      console.log("Информация об устройстве:", deviceInfo);
 
       // Если геолокация не поддерживается, центрируем на Москве
       if (!deviceInfo.hasGeolocation) {
-        console.log("Геолокация не поддерживается, центрируем на Москве");
         mapInstance.value.setCenter(moscowCoords, 12);
         return;
       }
 
       // Если разрешение запрещено
       if (deviceInfo.permission === "denied") {
-        console.log("Геолокация запрещена пользователем");
-
         // На мобильном предлагаем включить
         if (deviceInfo.isMobile) {
           const enableGeolocation = confirm(
@@ -276,7 +243,6 @@ export default {
               const userCoords = await getUserLocation();
               await processUserLocation(userCoords);
             } catch (error) {
-              console.log("Не удалось получить геолокацию после разрешения");
               mapInstance.value.setCenter(moscowCoords, 12);
             }
             return;
@@ -293,25 +259,20 @@ export default {
         const userCoords = await getUserLocation();
         await processUserLocation(userCoords);
       } catch (error) {
-        console.log("Ошибка получения геолокации, центрируем на Москве");
         mapInstance.value.setCenter(moscowCoords, 12);
       }
     };
 
     // 6. Обработка полученной геолокации
     const processUserLocation = async (userCoords) => {
-      console.log("=== ОБРАБОТКА ГЕОЛОКАЦИИ ===");
-
       // Проверяем совпадение с demo городами
       const locationCheck = checkUserInDemoCities(userCoords);
 
       if (locationCheck.inDemoCity) {
         // Пользователь в demo городе - центрируем на этом городе
-        console.log("Центрируем карту на городе:", locationCheck.city.cityName);
         mapInstance.value.setCenter(locationCheck.coordinates, 15);
       } else {
         // Пользователь не в demo городах - центрируем на Москве
-        console.log("Пользователь не в demo городах, центрируем на Москве");
         mapInstance.value.setCenter(moscowCoords, 12);
       }
 
@@ -341,16 +302,10 @@ export default {
     // 8. Добавление меток компаний
     const addCompanyMarkers = () => {
       if (!mapInstance.value) {
-        console.error("Карта не инициализирована");
         return;
       }
 
-      console.log("Добавляем кастомные метки компаний...");
-      console.log("Количество компаний:", companies.value.length);
-      console.log("Данные компаний:", companies.value);
-
       if (companies.value.length === 0) {
-        console.error("Нет данных компаний для отображения");
         return;
       }
 
@@ -359,29 +314,19 @@ export default {
         try {
           mapInstance.value.geoObjects.remove(marker);
         } catch (error) {
-          console.error("Ошибка удаления старого маркера:", error);
+          // Ошибка удаления старого маркера
         }
       });
       companyMarkers.value.clear();
 
       companies.value.forEach((company, index) => {
         try {
-          console.log(
-            `Добавляем кастомный маркер для компании ${index + 1}:`,
-            company.name,
-            company.coordinates
-          );
-
           // Проверяем координаты
           if (
             !company.coordinates ||
             !Array.isArray(company.coordinates) ||
             company.coordinates.length !== 2
           ) {
-            console.error(
-              `Неправильные координаты для компании ${company.name}:`,
-              company.coordinates
-            );
             return;
           }
 
@@ -390,8 +335,8 @@ export default {
             <div class="custom-marker">
               <div class="marker-content">
                 <div class="marker-logo">
-                  <img src="${company.logo || "/img/placeholder.jpg"}"
-                       alt="${company.name}"
+                  <img src="${company.logo || "/img/placeholder.jpg"}" 
+                       alt="${company.name}" 
                        style="
                          width: 100%;
                          height: 100%;
@@ -441,61 +386,24 @@ export default {
             }
           );
 
-          console.log("=== СОЗДАНИЕ МАРКЕРА ===");
-          console.log("Компания:", company.name);
-          console.log("Тип созданного placemark:", typeof placemark);
-          console.log("Созданный placemark:", placemark);
-          console.log(
-            "Есть ли getChildElement:",
-            typeof placemark.getChildElement
-          );
-          console.log(
-            "Есть ли getChildElement у placemark:",
-            placemark.getChildElement ? "ДА" : "НЕТ"
-          );
-
           // Добавляем обработчик клика на маркер
           placemark.events.add("click", () => {
-            console.log("Клик по кастомному маркеру:", company.name);
             selectCompany(company);
           });
 
           // Сохраняем маркер в Map для последующего управления
           companyMarkers.value.set(company.id, placemark);
-          console.log(
-            `Кастомный маркер для ${company.name} добавлен успешно с ID:`,
-            company.id
-          );
-          console.log("Тип сохраненного объекта:", typeof placemark);
-          console.log("Сохраненный объект:", placemark);
-          console.log(
-            "Есть ли getChildElement:",
-            typeof placemark.getChildElement
-          );
 
           mapInstance.value.geoObjects.add(placemark);
-          console.log(`Кастомный маркер для ${company.name} добавлен успешно`);
         } catch (error) {
-          console.error(
-            "Ошибка добавления кастомного маркера для компании:",
-            company.name,
-            error
-          );
+          // Ошибка добавления кастомного маркера для компании
         }
       });
-
-      console.log("Все кастомные маркеры добавлены");
-      console.log(
-        "Итоговое количество маркеров в Map:",
-        companyMarkers.value.size
-      );
-      console.log("Все ID маркеров:", Array.from(companyMarkers.value.keys()));
     };
 
     // 9. Принудительное центрирование на Москве (только ручное)
     const forceCenterOnMoscow = () => {
       if (mapInstance.value) {
-        console.log("Принудительное центрирование на Москве");
         mapInstance.value.setCenter(moscowCoords, 12);
       }
     };
@@ -506,21 +414,13 @@ export default {
 
     // Обработчик клика по слайдеру
     const onSlideClick = (slideData) => {
-      console.log("=== КЛИК ПО СЛАЙДЕРУ ===");
-      console.log("🎯 КЛИК ПО СЛАЙДЕРУ СРАБОТАЛ!");
-      console.log("Данные слайда:", slideData);
       // Убираем автоматическое центрирование - карта должна центрироваться только при свайпе слайдера
     };
 
     // Обработчик изменения слайдера - добавляем класс active к маркеру
     const onSlideChange = (slideData) => {
-      console.log("=== ОБРАБОТКА СВАЙПА СЛАЙДЕРА ===");
-      console.log("Полученные данные слайда:", slideData);
-
       if (slideData && slideData.id && mapInstance.value) {
         try {
-          console.log("Выделяем маркер для компании ID:", slideData.id);
-
           // Убираем класс active со всех маркеров
           companyMarkers.value.forEach((marker, id) => {
             try {
@@ -535,7 +435,7 @@ export default {
                 }
               }
             } catch (error) {
-              console.error(`Ошибка обработки маркера ID: ${id}`, error);
+              // Ошибка обработки маркера
             }
           });
 
@@ -548,23 +448,17 @@ export default {
                 markerElement.querySelector(".custom-marker");
               if (customMarker) {
                 customMarker.classList.add("active");
-                console.log(
-                  `Добавлен класс active к маркеру ID: ${slideData.id}`
-                );
               }
             }
           }
         } catch (error) {
-          console.error("Ошибка обработки свайпа слайдера:", error);
+          // Ошибка обработки свайпа слайдера
         }
       }
     };
 
     // Инициализация слайдера с данными из demoCompany
     const initSliderData = () => {
-      console.log("=== ИНИЦИАЛИЗАЦИЯ ДАННЫХ СЛАЙДЕРА ===");
-      console.log("Исходные компании:", companies.value);
-
       // Показываем все компании изначально
       const sliderData = companies.value.map((company, index) => {
         const slideData = {
@@ -586,12 +480,9 @@ export default {
           id: company.id,
         };
 
-        console.log(`Слайд ${index + 1}:`, slideData);
         return slideData;
       });
 
-      console.log("Начальные данные для слайдера (все компании):", sliderData);
-      console.log("Количество слайдов:", sliderData.length);
       return sliderData;
     };
 
@@ -640,30 +531,21 @@ export default {
           }));
 
           cards.value = newSliderData;
-          console.log(`Компаний в зоне видимости: ${filtered.length}`);
-          console.log(
-            "Обновлен слайдер с компаниями в зоне видимости:",
-            newSliderData
-          );
         } catch (error) {
-          console.error("Ошибка обновления компаний в зоне видимости:", error);
+          // Ошибка обновления компаний в зоне видимости
         }
       }, 200); // Задержка 200мс для дебаунсинга
     };
 
     // Функция выбора компании
     const selectCompany = (company) => {
-      console.log("Выбрана компания:", company.name);
       selectedCompany.value = company;
     };
 
     // Загрузка Yandex Maps API
     const loadYandexMapScript = () => {
       return new Promise((resolve, reject) => {
-        console.log("Загрузка Яндекс.Карт API...");
-
         if (window.ymaps) {
-          console.log("API уже загружен");
           resolve(window.ymaps);
           return;
         }
@@ -673,34 +555,23 @@ export default {
           "https://api-maps.yandex.ru/2.1/?apikey=3dc07a98-540b-4338-b92a-1e358928cde6&lang=ru_RU";
 
         script.onload = () => {
-          console.log("Скрипт Яндекс.Карт загружен");
           if (window.ymaps) {
             window.ymaps.ready(() => {
-              console.log("API Яндекс.Карт готов к использованию");
               resolve(window.ymaps);
             });
           } else {
-            console.error("window.ymaps не найден после загрузки скрипта");
             reject(new Error("API не инициализирован"));
           }
         };
 
         script.onerror = (error) => {
-          console.error("Ошибка загрузки скрипта Яндекс.Карт:", error);
-          console.warn("Возможно, запрос заблокирован блокировщиком рекламы");
-
           // Попробуем альтернативный способ загрузки
           setTimeout(() => {
             if (window.ymaps) {
-              console.log("API загружен с задержкой");
               window.ymaps.ready(() => {
-                console.log(
-                  "API Яндекс.Карт готов к использованию (альтернативный способ)"
-                );
                 resolve(window.ymaps);
               });
             } else {
-              console.error("API не загружен даже с задержкой");
               reject(new Error("Ошибка загрузки скрипта"));
             }
           }, 2000);
@@ -708,16 +579,14 @@ export default {
 
         // Добавляем обработчик для отслеживания блокировки
         script.addEventListener("error", (event) => {
-          console.warn("Скрипт заблокирован:", event);
+          // Скрипт заблокирован
         });
 
         document.head.appendChild(script);
-        console.log("Скрипт добавлен в DOM");
 
         // Таймаут на случай, если скрипт не загрузится
         setTimeout(() => {
           if (!window.ymaps) {
-            console.error("Таймаут загрузки API");
             reject(new Error("Таймаут загрузки API"));
           }
         }, 10000);
@@ -725,15 +594,11 @@ export default {
     };
 
     onMounted(async () => {
-      console.log("=== НАЧАЛО ИНИЦИАЛИЗАЦИИ КАРТЫ ===");
-      console.log("Данные компаний:", companies.value);
-
       try {
         await loadYandexMapScript();
         await initMap();
-        console.log("=== КАРТА УСПЕШНО ИНИЦИАЛИЗИРОВАНА ===");
       } catch (error) {
-        console.error("Ошибка инициализации карты:", error);
+        // Ошибка инициализации карты
       }
     });
 
