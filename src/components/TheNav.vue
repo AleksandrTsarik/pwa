@@ -177,6 +177,7 @@ export default {
         align-items: center;
         justify-content: center;
         border: solid 3px #fff;
+        z-index: 8888;
       }
       &:nth-child(4) {
         text-align: right;

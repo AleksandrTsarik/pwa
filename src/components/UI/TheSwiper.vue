@@ -15,8 +15,8 @@
   >
     <SwiperSlide v-for="(slide, i) in slider" :key="i">
       <div class="slider" v-if="typeSlider === 'map'">
-        <div class="slider__wrap">
-          <div class="slider__haed">
+        <div class="slider__wrap" @click="handleSlideClick(slide)">
+          <div class="slider__head">
             <div class="slider__img">
               <img :src="slide.img" alt="" />
             </div>
@@ -86,14 +86,24 @@
               </div>
             </div>
           </div>
-          <div class="slider__body"></div>
-          <div class="slider__footer" v-if="slide.studio"></div>
+          <div class="slider__body">
+            <div class="slider__tags" v-if="slide.tags && slide.tags.length">
+              <div class="slider-tag" v-for="(item, i) in slide.tags" :key="i">
+                {{ item }}
+              </div>
+            </div>
+          </div>
+          <div class="slider__footer" v-if="slide.studio">
+            <div class="slider__small">
+              <p></p>
+              <a :href="`tel:${slide.phone}`">{{ slide.phone }}</a>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="slider" v-if="typeSlider === 'code'"></div>
     </SwiperSlide>
-    <SwiperControls />
   </Swiper>
 </template>
 
@@ -114,18 +124,25 @@ import {
   EffectCoverflow,
   EffectFade,
 } from "swiper/modules";
+
 export default {
   components: {
     Swiper,
     SwiperSlide,
   },
   props: {
-    slider: { type: Array, default: [], require: false },
-    options: { type: Object, default: {}, require: false },
-    typeSlider: { type: String, default: "", require: false },
+    slider: { type: Array, default: () => [], required: false },
+    options: { type: Object, default: () => ({}), required: false },
+    typeSlider: { type: String, default: "", required: false },
   },
   mounted() {
     console.log(this.options);
+  },
+  methods: {
+    handleSlideClick(slide) {
+      console.log("Клик по слайду:", slide);
+      this.$emit("slide-click", slide);
+    },
   },
   setup() {
     return {
@@ -141,119 +158,4 @@ export default {
 };
 </script>
 
-<style lang="scss">
-.slider {
-  height: 100%;
-  &__info {
-    padding: 25px 30px;
-    height: 100%;
-    position: relative;
-    @media (max-width: 767px) {
-      padding: 15px 20px;
-    }
-  }
-  &__wrap {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
-  &__body {
-    flex-grow: 1;
-  }
-  &__name-pr {
-    padding-right: 8px;
-  }
-
-  &__text {
-    margin-top: auto;
-  }
-  &__img {
-    transition: 0.3s;
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  }
-  &__arrow {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background-color: rgb(var(--primary));
-    flex: 0 0 45px;
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    transition: 0.3s;
-    position: absolute;
-    right: 25px;
-    bottom: 18px;
-  }
-  a.slider__wrap {
-    transition: 0.3s;
-    display: block;
-    border-radius: var(--radiusBig);
-    overflow: hidden;
-    &:hover {
-      @media (min-width: 1024px) {
-        background-color: rgb(var(--darkBg));
-        .slider {
-          &__info {
-            background-color: rgb(var(--darkBg));
-          }
-          &__arrow {
-            transform: rotate(-45deg);
-          }
-          &__img img {
-            filter: grayscale(100%);
-          }
-        }
-      }
-    }
-  }
-}
-
-.slider-swiper {
-  .swiper-slide {
-    background-color: rgb(var(--lightBg));
-    border-radius: 20px;
-    height: auto;
-    @media (max-width: 767px) {
-      border-radius: 15px;
-    }
-  }
-  padding-top: 100px !important  ;
-  @media (max-width: 767px) {
-    padding-top: 80px !important;
-  }
-  .swiper-button-next,
-  .swiper-button-prev {
-    top: 30px;
-    right: 0;
-    left: auto;
-  }
-  .swiper-button-prev {
-    right: 80px;
-    @media (max-width: 767px) {
-      right: 70px;
-    }
-  }
-}
-
-// .slider-simple {
-//   .slider {
-//     &__info {
-//       flex-direction: column;
-//       text-align: left;
-//       align-items: flex-start;
-//     }
-//     &__name {
-//       margin-bottom: 5px;
-//       flex-grow: 1;
-//     }
-//     &__text {
-//       margin-top: auto;
-//     }
-//   }
-// }
-</style>
+<style lang="scss"></style>

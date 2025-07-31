@@ -2,61 +2,71 @@
   <div class="map">
     <div id="yandexMap" class="map-container"></div>
 
-    <!-- Кнопка для центрирования на Москве -->
+    <!-- Слайдер с данными из demoCompany -->
+    <slider
+      :options="optionsSlider"
+      :slider="cards"
+      :typeSlider="'map'"
+      :class="'slider-map slider-swiper'"
+      @slide-click="onSlideClick"
+    />
+
+    <!-- Кнопка центрирования на Москве -->
     <button
-      @click="forceCenterOnMoscow"
       class="moscow-center-btn"
+      @click="forceCenterOnMoscow"
       title="Центрировать на Москве"
     >
       🏛️ Москва
     </button>
 
-    <div
-      class="company-swiper"
-      v-if="companiesInView.length > 0"
-      @touchstart="onTouchStart"
-      @touchmove="onTouchMove"
-      @touchend="onTouchEnd"
-      @mousedown="onMouseDown"
-      @mousemove="onMouseMove"
-      @mouseup="onMouseUp"
-      @mouseleave="onMouseUp"
+    <!-- Кнопка для тестирования маркеров -->
+    <button
+      class="test-markers-btn"
+      @click="testMarkers"
+      title="Тестировать маркеры"
+      style="
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 1000;
+        background: #fff;
+        border: 2px solid #28a745;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #28a745;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      "
     >
-      <div
-        class="company-card"
-        v-for="(company, idx) in companiesInView"
-        :key="company.id"
-        :class="{ active: idx === activeIndex }"
-        :style="cardStyle(idx)"
-        @click="selectCompany(company)"
-      >
-        <!-- Отображение изображения в карточке -->
-        <img
-          :src="company.image || '/img/placeholder.jpg'"
-          :alt="company.name"
-          class="company-card__image"
-          @error="onImageError"
-        />
-        <div class="company-card__info">
-          <h3>{{ company.name }}</h3>
-          <p class="company-card__address">{{ company.address }}</p>
-          <div class="company-card__meta">
-            <span v-if="company.price" class="company-card__price">{{
-              company.price
-            }}</span>
-            <span v-if="company.rating" class="company-card__rating"
-              >★ {{ company.rating }}</span
-            >
-          </div>
-        </div>
-      </div>
-      <slider
-        :options="optionsSlider"
-        :slider="cards"
-        :typeSlider="'map'"
-        :class="'slider-map slider-swiper'"
-      />
-    </div>
+      🔍 Тест
+    </button>
+
+    <!-- Кнопка для принудительного добавления маркеров -->
+    <button
+      class="force-markers-btn"
+      @click="forceAddMarkers"
+      title="Добавить маркеры"
+      style="
+        position: absolute;
+        top: 20px;
+        left: 120px;
+        z-index: 1000;
+        background: #fff;
+        border: 2px solid #dc3545;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #dc3545;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      "
+    >
+      📍 Маркеры
+    </button>
   </div>
 </template>
 
@@ -73,34 +83,20 @@ export default {
     return {
       optionsSlider: {
         loop: true,
-        centeredSlides: false,
+        centeredSlides: true,
         spaceBetween: 20,
-        pagination: false,
+        slidesPerView: 1,
+        slidesPerGroup: 1,
+        pagination: {
+          clickable: true,
+          dynamicBullets: true,
+        },
+
         modules: "modules",
         mousewheel: false,
-        breakpoints: {
-          1023: {
-            slidesPerView: 4,
-          },
-          575: {
-            slidesPerView: 2,
-          },
-          320: {
-            slidesPerView: 1,
-            slidesPerGroup: 1,
-          },
-        },
-        navigation: true,
+        navigation: false,
       },
-      cards: [
-        {
-          img: "",
-          name: "",
-          time: "",
-          address: "",
-          studio: "",
-        },
-      ],
+      // cards теперь управляется через setup
     };
   },
   name: "MapDemo",
@@ -117,14 +113,11 @@ export default {
         marker: c.marker || "/img/marker.png",
       }))
     );
+    const cards = ref([]); // Добавляем ref для cards
     const selectedCompany = ref(null);
     const mapInstance = shallowRef(null);
     const userMarker = shallowRef(null);
     const companiesInView = ref([]);
-    const activeIndex = ref(0);
-    let startX = 0;
-    let deltaX = 0;
-    let dragging = false;
 
     // Координаты Москвы
     const moscowCoords = [55.755819, 37.617644];
@@ -252,11 +245,28 @@ export default {
         // Добавляем метки компаний
         addCompanyMarkers();
 
-        // Запускаем проверку геолокации
-        await checkAndCenterMap();
+        // Проверяем что маркеры добавились
+        setTimeout(() => {
+          if (mapInstance.value && mapInstance.value.geoObjects) {
+            console.log(
+              "Количество объектов на карте:",
+              mapInstance.value.geoObjects.getLength()
+            );
+          }
+        }, 1000);
 
-        // Добавляем обработчик изменения границ карты
-        mapInstance.value.events.add("boundschange", updateCompaniesInView);
+        // Инициализируем данные слайдера
+        const initialSliderData = initSliderData();
+        cards.value = initialSliderData;
+        console.log("Начальные данные слайдера:", initialSliderData);
+
+        // Простая проверка геолокации без сложной логики
+        try {
+          const userCoords = await getUserLocation();
+          addUserMarker(userCoords);
+        } catch (error) {
+          console.log("Геолокация недоступна, используем Москву");
+        }
       } catch (error) {
         console.error("Ошибка инициализации карты:", error);
       }
@@ -356,46 +366,42 @@ export default {
 
     // 8. Добавление меток компаний
     const addCompanyMarkers = () => {
-      if (!mapInstance.value) return;
+      if (!mapInstance.value) {
+        console.error("Карта не инициализирована");
+        return;
+      }
 
-      console.log("Добавляем кастомные метки компаний...");
+      console.log("Добавляем метки компаний...");
+      console.log("Количество компаний:", companies.value.length);
+      console.log("Данные компаний:", companies.value);
 
-      companies.value.forEach((company) => {
+      if (companies.value.length === 0) {
+        console.error("Нет данных компаний для отображения");
+        return;
+      }
+
+      companies.value.forEach((company, index) => {
         try {
-          // Создаем кастомный HTML для маркера
-          const markerContent = `
-            <div class="custom-marker" data-company-id="${company.id}">
-              <div class="marker-content">
-                <div class="marker-logo">
-                  <img src="${company.logo || "/img/placeholder.jpg"}" 
-                       alt="${company.name}" 
-                       onerror="this.src='/img/logo.png'; this.onerror=null;">
-                </div>
-                <div class="marker-info">
-                  <div class="marker-name">${company.name}</div>
-                  <div class="marker-rating">★ ${company.rating || "0"}</div>
-                  <div class="marker-price">${company.price || ""}</div>
-                </div>
-              </div>
-            </div>
-          `;
+          console.log(
+            `Добавляем маркер для компании ${index + 1}:`,
+            company.name,
+            company.coordinates
+          );
 
-          // Создаем кастомный макет для маркера
-          const CustomMarkerLayout =
-            window.ymaps.templateLayoutFactory.createClass(markerContent, {
-              build: function () {
-                CustomMarkerLayout.superclass.build.call(this);
-                this.getDataElement()
-                  .querySelector(".custom-marker")
-                  .addEventListener("click", () => {
-                    console.log("Клик по кастомному маркеру:", company.name);
-                    selectCompany(company);
-                    mapInstance.value.setCenter(company.coordinates, 15);
-                  });
-              },
-            });
+          // Проверяем координаты
+          if (
+            !company.coordinates ||
+            !Array.isArray(company.coordinates) ||
+            company.coordinates.length !== 2
+          ) {
+            console.error(
+              `Неправильные координаты для компании ${company.name}:`,
+              company.coordinates
+            );
+            return;
+          }
 
-          // Создаем маркер с кастомным макетом
+          // Создаем простой маркер для тестирования
           const placemark = new window.ymaps.Placemark(
             company.coordinates,
             {
@@ -410,21 +416,29 @@ export default {
               `,
             },
             {
-              iconLayout: CustomMarkerLayout,
-              iconOffset: [-25, -25], // Центрируем маркер
-              iconContentOffset: [0, 0],
+              preset: "islands#blueDotIcon", // Используем стандартный маркер
             }
           );
 
+          // Добавляем обработчик клика
+          placemark.events.add("click", () => {
+            console.log("Клик по маркеру:", company.name);
+            selectCompany(company);
+            mapInstance.value.setCenter(company.coordinates, 15);
+          });
+
           mapInstance.value.geoObjects.add(placemark);
+          console.log(`Маркер для ${company.name} добавлен успешно`);
         } catch (error) {
           console.error(
-            "Ошибка добавления кастомного маркера для компании:",
+            "Ошибка добавления маркера для компании:",
             company.name,
             error
           );
         }
       });
+
+      console.log("Все маркеры добавлены");
     };
 
     // 9. Принудительное центрирование на Москве
@@ -435,115 +449,116 @@ export default {
       }
     };
 
+    // 9.1. Функция для тестирования маркеров
+    const testMarkers = () => {
+      console.log("=== ТЕСТИРОВАНИЕ МАРКЕРОВ ===");
+      console.log("Карта инициализирована:", !!mapInstance.value);
+      console.log("Количество компаний:", companies.value.length);
+      console.log("Компании:", companies.value);
+
+      if (mapInstance.value && mapInstance.value.geoObjects) {
+        console.log(
+          "Количество объектов на карте:",
+          mapInstance.value.geoObjects.getLength()
+        );
+      }
+    };
+
+    // 9.2. Функция для принудительного добавления маркеров
+    const forceAddMarkers = () => {
+      console.log("=== ПРИНУДИТЕЛЬНОЕ ДОБАВЛЕНИЕ МАРКЕРОВ ===");
+      if (mapInstance.value) {
+        addCompanyMarkers();
+      } else {
+        console.error("Карта не инициализирована");
+      }
+    };
+
+    // 10. Инициализация слайдера с данными из demoCompany
+    const initSliderData = () => {
+      console.log("=== ИНИЦИАЛИЗАЦИЯ ДАННЫХ СЛАЙДЕРА ===");
+
+      // Преобразуем данные из demoCompany в формат для слайдера
+      const sliderData = companies.value.map((company) => ({
+        img: company.logo || "/img/placeholder.jpg",
+        name: company.name,
+        time: company.time || "",
+        address: company.address,
+        studio: company.studio || "",
+        rating: company.rating,
+        price: company.price,
+        phone: company.phone,
+        email: company.email,
+        website: company.website,
+        tags: company.tags || [],
+        extra: company.extra || [],
+        cardType: company.cardType || [],
+        sportType: company.sportType || [],
+        coordinates: company.coordinates,
+        id: company.id,
+      }));
+
+      console.log("Данные для слайдера:", sliderData);
+      return sliderData;
+    };
+
+    // 11. Обновление слайдера при изменении компаний в зоне видимости
+    const updateSliderData = () => {
+      // Всегда показываем все компании из demoCompany, независимо от зоны видимости
+      const newSliderData = companies.value.map((company) => ({
+        img: company.logo || "/img/placeholder.jpg",
+        name: company.name,
+        time: company.time || "",
+        address: company.address,
+        studio: company.studio || "",
+        rating: company.rating,
+        price: company.price,
+        phone: company.phone,
+        email: company.email,
+        website: company.website,
+        tags: company.tags || [],
+        extra: company.extra || [],
+        cardType: company.cardType || [],
+        sportType: company.sportType || [],
+        coordinates: company.coordinates,
+        id: company.id,
+      }));
+
+      // Обновляем cards через ref
+      cards.value = newSliderData;
+      console.log("Обновление данных слайдера:", newSliderData);
+      return newSliderData;
+    };
+
     // Остальные функции для слайдера
     const selectCompany = (company) => {
+      console.log("Выбрана компания:", company.name);
       selectedCompany.value = company;
-      if (mapInstance.value) {
-        mapInstance.value.setCenter(company.coordinates, 15);
+      if (mapInstance.value && company.coordinates) {
+        try {
+          mapInstance.value.setCenter(company.coordinates, 15);
+          console.log("Карта центрирована на компании:", company.name);
+        } catch (error) {
+          console.error("Ошибка центрирования карты:", error);
+        }
       }
     };
 
     const updateCompaniesInView = () => {
-      if (!mapInstance.value) return;
-
-      try {
-        const bounds = mapInstance.value.getBounds();
-        const filtered = companies.value.filter((company) => {
-          const [lng, lat] = company.coordinates;
-          return (
-            lng >= bounds[0][0] &&
-            lng <= bounds[1][0] &&
-            lat >= bounds[0][1] &&
-            lat <= bounds[1][1]
-          );
-        });
-
-        companiesInView.value = filtered;
-
-        if (activeIndex.value >= filtered.length) {
-          activeIndex.value = 0;
-        }
-
-        console.log(`Компаний в зоне видимости: ${filtered.length}`);
-      } catch (error) {
-        console.error("Ошибка обновления компаний в зоне видимости:", error);
-      }
-    };
-
-    const cardStyle = (idx) => {
-      if (idx === activeIndex.value) {
-        return {
-          transform: "translateX(-50%) scale(1)",
-          opacity: 1,
-          zIndex: 2,
-          pointerEvents: "auto",
-        };
-      } else {
-        return {
-          transform: "translateX(-50%) scale(0.8)",
-          opacity: 0,
-          zIndex: 1,
-          pointerEvents: "none",
-        };
-      }
-    };
-
-    const goTo = (idx) => {
-      activeIndex.value = idx;
-    };
-
-    const onTouchStart = (e) => {
-      if (companiesInView.value.length <= 1) return;
-      dragging = true;
-      startX = e.touches[0].clientX;
-    };
-
-    const onTouchMove = (e) => {
-      if (!dragging) return;
-      deltaX = e.touches[0].clientX - startX;
-    };
-
-    const onTouchEnd = () => {
-      if (!dragging) return;
-      if (deltaX > 50 && activeIndex.value > 0) {
-        activeIndex.value--;
-      } else if (
-        deltaX < -50 &&
-        activeIndex.value < companiesInView.value.length - 1
-      ) {
-        activeIndex.value++;
-      }
-      dragging = false;
-      deltaX = 0;
-    };
-
-    const onMouseDown = (e) => {
-      if (companiesInView.value.length <= 1) return;
-      dragging = true;
-      startX = e.clientX;
-    };
-
-    const onMouseMove = (e) => {
-      if (!dragging) return;
-      deltaX = e.clientX - startX;
-    };
-
-    const onMouseUp = () => {
-      if (!dragging) return;
-      if (deltaX > 50 && activeIndex.value > 0) {
-        activeIndex.value--;
-      } else if (
-        deltaX < -50 &&
-        activeIndex.value < companiesInView.value.length - 1
-      ) {
-        activeIndex.value++;
-      }
-      dragging = false;
-      deltaX = 0;
+      // Упрощенная версия без проблемных операций
+      console.log("Обновление компаний в зоне видимости");
     };
 
     const onImageError = (event) => {
       event.target.src = "/img/logo.png";
+    };
+
+    // Обработчик клика по слайдеру
+    const onSlideClick = (slideData) => {
+      console.log("Клик по слайдеру:", slideData);
+      if (slideData.coordinates && mapInstance.value) {
+        mapInstance.value.setCenter(slideData.coordinates, 15);
+      }
     };
 
     // Загрузка Yandex Maps API
@@ -585,9 +600,13 @@ export default {
     };
 
     onMounted(async () => {
+      console.log("=== НАЧАЛО ИНИЦИАЛИЗАЦИИ КАРТЫ ===");
+      console.log("Данные компаний:", companies.value);
+
       try {
         await loadYandexMapScript();
-        initMap();
+        await initMap();
+        console.log("=== КАРТА УСПЕШНО ИНИЦИАЛИЗИРОВАНА ===");
       } catch (error) {
         console.error("Ошибка инициализации карты:", error);
       }
@@ -595,20 +614,15 @@ export default {
 
     return {
       companies,
+      cards, // Добавляем cards
       selectedCompany,
       selectCompany,
       companiesInView,
-      activeIndex,
-      cardStyle,
-      goTo,
-      onTouchStart,
-      onTouchMove,
-      onTouchEnd,
-      onMouseDown,
-      onMouseMove,
-      onMouseUp,
       onImageError,
+      onSlideClick,
       forceCenterOnMoscow,
+      testMarkers, // Добавляем функцию тестирования
+      forceAddMarkers, // Добавляем функцию принудительного добавления маркеров
     };
   },
 };
@@ -658,103 +672,21 @@ export default {
   transform: translateY(0);
 }
 
-.company-swiper {
+/* Стили для слайдера */
+.slider-map.swiper {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 50px;
-  z-index: 1000; /* Увеличиваем z-index */
-  display: flex;
-  background-color: rgba(222, 222, 222, 0.8); /* Делаем фон полупрозрачным */
-  backdrop-filter: blur(5px); /* Добавляем размытие фона */
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  overflow: hidden;
-  height: 160px; /* Увеличиваем высоту для изображения */
-  padding: 10px 0;
-  box-sizing: border-box;
-}
-
-.company-card {
-  min-width: 280px; /* Увеличиваем ширину */
-  max-width: 90vw;
-  margin: 0 10px;
-  background: #ffffff;
-  border-radius: 12px; /* Более закругленные углы */
-  padding: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Более выраженная тень */
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: transform 0.3s, opacity 0.3s, box-shadow 0.3s;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 0;
-  z-index: 1;
-  pointer-events: none;
-  display: flex; /* Используем flexbox для расположения изображения и текста */
-  align-items: flex-start; /* Выравнивание по верхнему краю */
-  &__image {
-    width: 80px; /* Фиксированная ширина изображения */
-    height: 80px; /* Фиксированная высота изображения */
-    object-fit: cover; /* Обрезка изображения до нужного размера */
-    border-radius: 8px; /* Закругление углов изображения */
-    margin-right: 12px; /* Отступ справа от изображения */
-    flex-shrink: 0; /* Изображение не сжимается */
+  bottom: 150px;
+  width: 100%;
+  z-index: 5;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 20px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  .swiper-wrapper {
+    padding: 50px 0 150px;
   }
-  &__info {
-    flex: 1; /* Занимает оставшееся пространство */
-    min-width: 0; /* Позволяет тексту обрезаться, если не помещается */
-  }
-  &__address {
-    font-size: 0.9em;
-    color: #666;
-    margin: 4px 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  &__meta {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 6px;
-  }
-  &__price {
-    font-weight: bold;
-    color: #28a745; /* Зеленый цвет для цены */
-  }
-  &__rating {
-    color: #ffc107; /* Желтый цвет для рейтинга */
-    font-weight: bold;
-  }
-  &.active {
-    opacity: 1;
-    z-index: 2;
-    pointer-events: auto;
-  }
-}
-
-.company-pagination {
-  display: flex;
-  justify-content: center;
-  margin-top: 12px;
-  gap: 8px;
-  z-index: 3; /* Убедимся, что точки пагинации поверх карточек */
-  .dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #ccc;
-    display: inline-block;
-    transition: background 0.2s;
-    cursor: pointer;
-  }
-}
-
-.company-pagination .company-pagination .dot.active {
-  background: #007bff;
 }
 </style>
 
