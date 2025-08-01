@@ -11,6 +11,7 @@
     :pagination="options.pagination"
     :breakpoints="options.breakpoints"
     :effect="options.effect"
+    :autoHeight="options.autoHeight"
     :mousewheel="options.mousewheel"
     @slideChange="handleSlideChange"
   >
@@ -97,8 +98,16 @@
           </div>
           <div class="slider__footer" v-if="slide.studio">
             <div class="slider__small">
-              <p></p>
-              <a :href="`tel:${slide.phone}`">{{ slide.phone }}</a>
+              <div>
+                <p>Высокий спрос!</p>
+                <p>
+                  Залы переполнены. Необходимо уточнить доступность времени на
+                  ресепшене.
+                </p>
+              </div>
+              <a :href="`tel:${slide.phone}`" class="btn btn-primary"
+                >Связаться</a
+              >
             </div>
           </div>
         </div>
@@ -183,4 +192,103 @@ export default {
 };
 </script>
 
-<style lang="scss"></style>
+<style lang="scss">
+.slider-map {
+  padding-top: 20px;
+  .slider {
+    margin: 0 auto;
+    max-width: 50%;
+    @media (max-width: 575px) {
+      max-width: 90%;
+    }
+    &__small {
+      background-color: rgba(255, 241, 215, 1);
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 16px;
+      div {
+        p:first-child {
+          font-size: 14px;
+          font-weight: 700;
+          margin-bottom: 10px;
+          font-family: var(--ff);
+        }
+        p:last-child {
+          font-size: 12px;
+          font-weight: 500;
+          margin-bottom: 10px;
+          font-family: var(--ff);
+          line-height: 20px;
+        }
+      }
+    }
+    &__wrap {
+      margin: 0 auto;
+    }
+    &__img {
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+      }
+    }
+    &__head {
+      display: grid;
+      grid-template-columns: 115px auto;
+      gap: 10px;
+    }
+    &__name {
+      font-size: 16px;
+      font-weight: 500;
+      font-family: var(--stetica);
+      margin-bottom: 15px;
+      margin-top: 10px;
+    }
+    &__time {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 400;
+      font-family: var(--ff);
+      margin-bottom: 10px;
+    }
+    &__location {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      font-weight: 400;
+      font-family: var(--ff);
+    }
+    &__tags {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+  }
+  .slider-tag {
+    background-color: rgba(215, 235, 255, 1);
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 400;
+    font-family: var(--ff);
+    padding: 3px 10px;
+    border: solid 1px transparent;
+    white-space: nowrap;
+    margin-top: 10px;
+    &:last-child {
+      background: none;
+      border-color: rgba(237, 237, 237, 1);
+    }
+  }
+  .swiper-pagination {
+    top: 00px;
+  }
+  .swiper-pagination-bullets {
+    border: solid 1px;
+  }
+  // swiper-pagination swiper-pagination-clickable swiper-pagination-bullets swiper-pagination-horizontal swiper-pagination-bullets-dynamic
+}
+</style>

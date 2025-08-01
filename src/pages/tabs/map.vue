@@ -1,40 +1,22 @@
 <template>
   <div class="map">
-    <div id="yandexMap" class="map-container"></div>
-
-    <!-- Слайдер с данными из demoCompany -->
-    <slider
-      v-if="cards.length > 0"
-      :options="optionsSlider"
-      :slider="cards"
-      :typeSlider="'map'"
-      :class="'slider-map slider-swiper'"
-      @slide-change="onSlideChange"
-    />
-
-    <!-- Кнопка центрирования на Москве -->
-    <button
-      class="moscow-center-btn"
-      @click="forceCenterOnMoscow"
-      title="Центрировать на Москве"
-      style="
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        z-index: 1000;
-        background: #fff;
-        border: 2px solid #007bff;
-        border-radius: 8px;
-        padding: 8px 16px;
-        font-size: 14px;
-        font-weight: bold;
-        color: #007bff;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      "
-    >
-      🏛️ Москва
-    </button>
+    <div class="map__head">
+      <div class="map__container">
+        <h2 class="title map__title">Карта</h2>
+      </div>
+    </div>
+    <div class="map__body">
+      <div id="yandexMap" class="map-container"></div>
+    </div>
+    <div class="map__footer" v-if="cards.length > 0">
+      <slider
+        :options="optionsSlider"
+        :slider="cards"
+        :typeSlider="'map'"
+        :class="'slider-map slider-swiper'"
+        @slide-change="onSlideChange"
+      />
+    </div>
   </div>
 </template>
 
@@ -55,6 +37,7 @@ export default {
         spaceBetween: 20,
         slidesPerView: 1,
         slidesPerGroup: 1,
+        autoHeight: true, // Автоматическая высота слайдов
         pagination: {
           clickable: true,
           dynamicBullets: true,
@@ -64,6 +47,7 @@ export default {
         mousewheel: false,
         navigation: false,
       },
+
       // cards теперь управляется через setup
     };
   },
@@ -188,15 +172,31 @@ export default {
           center: moscowCoords,
           zoom: 12,
           controls: ["zoomControl", "fullscreenControl"],
+          autoFitToViewport: "always", // Автоматически подгонять под размер контейнера
         });
 
         // Добавляем метки компаний
         addCompanyMarkers();
 
-        // Проверяем что маркеры добавились
+        // Проверяем что маркеры добавились и устанавливаем активный класс для первого маркера
         setTimeout(() => {
           if (mapInstance.value && mapInstance.value.geoObjects) {
             // Маркеры добавлены
+            // Устанавливаем активный класс для первого маркера
+            if (companies.value.length > 0) {
+              const firstCompanyId = companies.value[0].id;
+              const firstMarker = companyMarkers.value.get(firstCompanyId);
+              if (firstMarker && firstMarker.getElement) {
+                const markerElement = firstMarker.getElement();
+                if (markerElement) {
+                  const customMarker =
+                    markerElement.querySelector(".custom-marker");
+                  if (customMarker) {
+                    customMarker.classList.add("active");
+                  }
+                }
+              }
+            }
           }
         }, 1000);
 
@@ -327,40 +327,36 @@ export default {
             !Array.isArray(company.coordinates) ||
             company.coordinates.length !== 2
           ) {
+            console.warn(
+              `Некорректные координаты для компании ${company.name}`
+            );
             return;
           }
 
           // Создаем кастомный HTML для маркера
           const markerHtml = `
-            <div class="custom-marker">
-              <div class="marker-content">
-                <div class="marker-logo">
-                  <img src="${company.logo || "/img/placeholder.jpg"}" 
-                       alt="${company.name}" 
-                       style="
-                         width: 100%;
-                         height: 100%;
-                         object-fit: cover;
-                         border-radius: 4px;
-                       "
-                       onerror="this.src='/img/placeholder.jpg'"
-                  />
-                </div>
-                <div class="marker-info">
-                  <div class="marker-name">${company.name}</div>
-                  <div class="marker-rating">★ ${company.rating || "0"}</div>
-                  ${
-                    company.price
-                      ? `<div class="marker-price">${company.price}</div>`
-                      : ""
-                  }
-                </div>
-              </div>
-              <div class="marker-tail"></div>
+        <div class="custom-marker" data-company-id="${company.id}">
+          <div class="marker-content">
+            <div class="marker-logo">
+              <img src="${company.logo || "/img/placeholder.jpg"}" alt="${
+            company.name
+          }" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" onerror="this.src='/img/placeholder.jpg'"/>
             </div>
-          `;
+            <div class="marker-info">
+              <div class="marker-name">${company.name}</div>
+              <div class="marker-rating">★ ${company.rating || "0"}</div>
+              ${
+                company.price
+                  ? `<div class="marker-price">${company.price}</div>`
+                  : ""
+              }
+            </div>
+          </div>
+          <div class="marker-tail"></div>
+        </div>
+      `;
 
-          // Создаем простой кастомный макет без сложных обработчиков
+          // Создаем простой кастомный макет
           const CustomLayout =
             window.ymaps.templateLayoutFactory.createClass(markerHtml);
 
@@ -368,35 +364,53 @@ export default {
           const placemark = new window.ymaps.Placemark(
             company.coordinates,
             {
+              // Данные для hint и balloon
               hintContent: company.name,
-              balloonContent: `
-                <div class="marker-balloon">
-                  <h3>${company.name}</h3>
-                  <p>${company.address}</p>
-                  <p>Рейтинг: ★ ${company.rating || "0"}</p>
-                  <p>Цена: ${company.price || "Не указана"}</p>
-                </div>
-              `,
+              balloonContent: `<div class="marker-balloon"><h3>${
+                company.name
+              }</h3><p>${company.address}</p><p>Рейтинг: ★ ${
+                company.rating || "0"
+              }</p><p>Цена: ${company.price || "Не указана"}</p></div>`,
+              // Сохраняем ID компании в данных метки для удобства
+              companyId: company.id,
             },
             {
               iconLayout: "default#imageWithContent",
               iconContentLayout: CustomLayout,
               iconContentOffset: [0, 0],
-              iconContentSize: [150, 50],
+              iconContentSize: [150, 50], // Убедитесь, что размеры соответствуют вашему markerHtml
             }
           );
 
           // Добавляем обработчик клика на маркер
           placemark.events.add("click", () => {
-            selectCompany(company);
+            // Находим индекс компании в исходном массиве для слайдера
+            const companyIndex = companies.value.findIndex(
+              (c) => c.id === company.id
+            );
+            if (companyIndex !== -1) {
+              // Эмитируем событие свайпа слайдера (или вызываем нужную функцию)
+              // Например, если у вас есть метод для перехода к слайду:
+              // goToSlide(companyIndex);
+              // Или если Slider.vue может слушать событие:
+              window.dispatchEvent(
+                new CustomEvent("map-marker-clicked", {
+                  detail: { companyId: company.id },
+                })
+              );
+            }
           });
 
-          // Сохраняем маркер в Map для последующего управления
-          companyMarkers.value.set(company.id, placemark);
-
+          // Добавляем маркер на карту
           mapInstance.value.geoObjects.add(placemark);
+
+          // Сохраняем ссылку на маркер в Map по ID компании
+          companyMarkers.value.set(company.id, placemark);
         } catch (error) {
-          // Ошибка добавления кастомного маркера для компании
+          console.error(
+            `Ошибка создания маркера для компании ${company.name}:`,
+            error
+          );
         }
       });
     };
@@ -441,7 +455,6 @@ export default {
 
           // Добавляем класс active к выбранному маркеру
           const selectedMarker = companyMarkers.value.get(slideData.id);
-          console.log(selectedMarker.getElement());
           if (selectedMarker && selectedMarker.getElement) {
             const markerElement = selectedMarker.getElement();
             if (markerElement) {
@@ -452,6 +465,50 @@ export default {
               }
             }
           }
+
+          // Логируем все маркеры, которые попадают на экран
+          const bounds = mapInstance.value.getBounds();
+          const visibleMarkers = [];
+          companyMarkers.value.forEach((marker) => {
+            const coordinates = marker.geometry.getCoordinates();
+            if (
+              coordinates[0] >= bounds[0][0] &&
+              coordinates[0] <= bounds[1][0] &&
+              coordinates[1] >= bounds[0][1] &&
+              coordinates[1] <= bounds[1][1]
+            ) {
+              visibleMarkers.push(marker);
+            }
+          });
+
+          // Логируем HTML-код видимых маркеров
+          visibleMarkers.forEach((marker) => {
+            // Попробуем получить HTML-код маркера через свойство iconContent
+            const markerHtml = marker.properties.get("iconContent");
+            if (markerHtml) {
+              console.log("HTML-код видимого маркера:", markerHtml);
+            } else {
+              // Попробуем получить HTML-код маркера через свойство balloonContent
+              const balloonContent = marker.properties.get("balloonContent");
+              if (balloonContent) {
+                console.log(
+                  "HTML-код видимого маркера (balloonContent):",
+                  balloonContent
+                );
+              } else {
+                // Попробуем получить HTML-код маркера через свойство hintContent
+                const hintContent = marker.properties.get("hintContent");
+                if (hintContent) {
+                  console.log(
+                    "HTML-код видимого маркера (hintContent):",
+                    hintContent
+                  );
+                } else {
+                  console.log("HTML-код маркера не доступен");
+                }
+              }
+            }
+          });
         } catch (error) {
           // Ошибка обработки свайпа слайдера
         }
@@ -630,54 +687,43 @@ export default {
 };
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 .map {
-  overflow: hidden;
   position: relative;
-  margin-bottom: -60px;
-  width: 100%;
-  height: 100vh;
+  height: calc(100vh - 65px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  &__head {
+    background-color: #fff;
+    flex-shrink: 0;
+    padding: 20px 0 15px;
+  }
+  &__body {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+    z-index: 0;
+    transform: translateY(10px);
+  }
+  &__footer {
+    flex-shrink: 0;
+    position: relative;
+    background-color: #fff;
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+    padding: 20px 0;
+  }
 }
 
 .map-container {
   width: 100%;
   height: 100%;
-  min-height: 400px;
-  background: #f0f0f0;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.moscow-center-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-  background: #fff;
-  border: 2px solid #007bff;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: bold;
-  color: #007bff;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.moscow-center-btn:hover {
-  background: #007bff;
-  color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
-}
-
-.moscow-center-btn:active {
-  transform: translateY(0);
-}
-</style>
-
-<!-- Добавляем стили для кастомной метки вне scoped стилей -->
-<style lang="scss">
-/* Стили для кастомной метки на карте */
 .marker {
   position: relative;
   display: block;
@@ -686,7 +732,7 @@ export default {
   border-radius: 6px;
   width: 150px;
   cursor: pointer;
-  z-index: 100; /* Высокий z-index для метки */
+  z-index: 100;
   display: grid;
   grid-template-columns: 20px auto;
   gap: 10px;
@@ -745,7 +791,12 @@ export default {
 
   /* Стили для активного состояния */
   &.active {
-    background-color: red !important;
+    background-color: #007bff !important;
+    border-color: #0056b3 !important;
+    color: white !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4) !important;
+    z-index: 1000 !important;
   }
 
   .marker-content {
@@ -796,109 +847,6 @@ export default {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-}
-
-/* Стили для балуна маркера */
-.marker-balloon {
-  padding: 10px;
-
-  h3 {
-    margin: 0 0 8px 0;
-    color: #333;
-    font-size: 16px;
-  }
-
-  p {
-    margin: 4px 0;
-    color: #666;
-    font-size: 14px;
-  }
-}
-
-/* Стили для слайдера */
-.slider-map.swiper {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  z-index: 0;
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  padding: 20px 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  .swiper-wrapper {
-    padding: 50px 0 150px;
-  }
-  .swiper-slide {
-  }
-  .slider {
-    margin: 0 auto;
-    max-width: 50%;
-    border: solid 1px;
-    @media (max-width: 575px) {
-      max-width: 90%;
-    }
-    &__wrap {
-      margin: 0 auto;
-    }
-    &__img {
-      img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 4px;
-      }
-    }
-    &__head {
-      display: grid;
-      grid-template-columns: 115px auto;
-      gap: 10px;
-    }
-    &__name {
-      font-size: 16px;
-      font-weight: 500;
-      font-family: var(--stetica);
-      margin-bottom: 15px;
-      margin-top: 10px;
-    }
-    &__time {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 12px;
-      font-weight: 400;
-      font-family: var(--ff);
-      margin-bottom: 10px;
-    }
-    &__location {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 12px;
-      font-weight: 400;
-      font-family: var(--ff);
-    }
-    &__tags {
-      display: flex;
-      gap: 5px;
-      flex-wrap: wrap;
-    }
-  }
-}
-.slider-tag {
-  background-color: rgba(215, 235, 255, 1);
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 400;
-  font-family: var(--ff);
-  padding: 3px 10px;
-  border: solid 1px transparent;
-  white-space: nowrap;
-  &:last-child {
-    background: none;
-    border-color: rgba(237, 237, 237, 1);
   }
 }
 </style>
