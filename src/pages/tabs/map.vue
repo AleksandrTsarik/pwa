@@ -823,7 +823,7 @@ export default {
   }
   &__descr {
     text-align: left;
-    padding-left: 40px;
+    padding-left: 30px;
   }
   &__info {
     display: flex;

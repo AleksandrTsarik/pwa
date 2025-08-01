@@ -86,7 +86,6 @@
                 </svg>
                 <p>{{ slide.address }}</p>
               </div>
-              <p>{{ slide.coordinates }}</p>
             </div>
           </div>
           <div class="slider__body">
