@@ -7,6 +7,71 @@
     </div>
     <div class="map__body">
       <div id="yandexMap" class="map-container"></div>
+      <div class="filter-btn">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 20 20"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g clip-path="url(#clip0_579_4543)">
+            <path
+              d="M14.0768 17.5311C15.9832 17.5311 17.5287 15.9857 17.5287 14.0793C17.5287 12.1729 15.9832 10.6274 14.0768 10.6274C12.1704 10.6274 10.625 12.1729 10.625 14.0793C10.625 15.9857 12.1704 17.5311 14.0768 17.5311Z"
+              stroke="white"
+              stroke-width="2"
+              stroke-miterlimit="10"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M5.90691 9.37242C7.81331 9.37242 9.35875 7.82698 9.35875 5.92059C9.35875 4.01419 7.81331 2.46875 5.90691 2.46875C4.00052 2.46875 2.45508 4.01419 2.45508 5.92059C2.45508 7.82698 4.00052 9.37242 5.90691 9.37242Z"
+              stroke="white"
+              stroke-width="2"
+              stroke-miterlimit="10"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M19.4043 14.0796H17.5215"
+              stroke="white"
+              stroke-width="2"
+              stroke-miterlimit="10"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M0.580078 5.92053H2.46289"
+              stroke="white"
+              stroke-width="2"
+              stroke-miterlimit="10"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M10.6218 14.0795H0.580078"
+              stroke="white"
+              stroke-width="2"
+              stroke-miterlimit="10"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M9.375 5.9209H19.4167"
+              stroke="white"
+              stroke-width="2"
+              stroke-miterlimit="10"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </g>
+          <defs>
+            <clipPath id="clip0_579_4543">
+              <rect width="20" height="20" fill="white" />
+            </clipPath>
+          </defs>
+        </svg>
+      </div>
     </div>
     <div class="map__footer" v-if="cards.length > 0">
       <slider
@@ -16,6 +81,211 @@
         :class="'slider-map slider-swiper'"
         @slide-change="onSlideChange"
       />
+    </div>
+  </div>
+  <div class="filter">
+    <div class="filter__overlay"></div>
+
+    <div class="filter-drop">
+      <form>
+        <div class="choice">
+          <div class="choice__blocks">
+            <!-- разводящая страница -->
+            <div class="choice__block">
+              <div class="choice__head">
+                <div class="choice__title">Фильтр</div>
+                <div class="choice__close"></div>
+              </div>
+              <div class="choice__body">
+                <div
+                  class="choice-path"
+                  v-for="(item, i) in filterItems"
+                  :key="i"
+                >
+                  <span>{{ item.name }}</span>
+                  <svg
+                    width="8"
+                    height="12"
+                    viewBox="0 0 8 12"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M1.85714 11L7 6L1.85714 1"
+                      stroke="#1D1F76"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <!-- Город -->
+            <div class="choice__block">
+              <div class="choice__head">
+                <div class="choice__title">
+                  <span
+                    ><svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M10.1429 3L5 8L10.1429 13"
+                        stroke="#2D2D2D"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  Город
+                </div>
+                <div class="choice__close"></div>
+              </div>
+            </div>
+            <!-- Расположение -->
+            <div class="choice__block">
+              <div class="choice__head">
+                <div class="choice__title">
+                  <span
+                    ><svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M10.1429 3L5 8L10.1429 13"
+                        stroke="#2D2D2D"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  Расположение
+                </div>
+                <div class="choice__close"></div>
+              </div>
+            </div>
+            <!-- Вид спорта -->
+            <div class="choice__block">
+              <div class="choice__head">
+                <div class="choice__title">
+                  <span
+                    ><svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M10.1429 3L5 8L10.1429 13"
+                        stroke="#2D2D2D"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  Вид спорта
+                </div>
+                <div class="choice__close"></div>
+              </div>
+            </div>
+            <!-- Тип карты -->
+            <div class="choice__block">
+              <div class="choice__head">
+                <div class="choice__title">
+                  <span
+                    ><svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M10.1429 3L5 8L10.1429 13"
+                        stroke="#2D2D2D"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  Тип карты
+                </div>
+                <div class="choice__close"></div>
+              </div>
+            </div>
+            <!-- Дополнительно -->
+            <div class="choice__block">
+              <div class="choice__head">
+                <div class="choice__title">
+                  <span
+                    ><svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M10.1429 3L5 8L10.1429 13"
+                        stroke="#2D2D2D"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  Дополнительно
+                </div>
+                <div class="choice__close"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="choice__btns">
+            <button class="btn btn-primary">Применить</button>
+            <button class="btn btn-transparent">
+              <span
+                ><svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M12.666 4.66669C12.4892 4.66669 12.3196 4.73693 12.1946 4.86195C12.0696 4.98697 11.9993 5.15654 11.9993 5.33335V12.794C11.9802 13.1311 11.8287 13.4471 11.5777 13.6729C11.3267 13.8988 10.9966 14.0164 10.6593 14H5.33935C5.00208 14.0164 4.672 13.8988 4.42102 13.6729C4.17003 13.4471 4.01847 13.1311 3.99935 12.794V5.33335C3.99935 5.15654 3.92911 4.98697 3.80409 4.86195C3.67906 4.73693 3.50949 4.66669 3.33268 4.66669C3.15587 4.66669 2.9863 4.73693 2.86128 4.86195C2.73625 4.98697 2.66602 5.15654 2.66602 5.33335V12.794C2.68504 13.4848 2.97707 14.14 3.47814 14.6159C3.9792 15.0919 4.64846 15.3498 5.33935 15.3334H10.6593C11.3502 15.3498 12.0195 15.0919 12.5206 14.6159C13.0216 14.14 13.3137 13.4848 13.3327 12.794V5.33335C13.3327 5.15654 13.2624 4.98697 13.1374 4.86195C13.0124 4.73693 12.8428 4.66669 12.666 4.66669Z"
+                    fill="white"
+                  />
+                  <path
+                    d="M13.3333 2.66669H10.6667V1.33335C10.6667 1.15654 10.5964 0.986973 10.4714 0.861949C10.3464 0.736925 10.1768 0.666687 10 0.666687H6C5.82319 0.666687 5.65362 0.736925 5.5286 0.861949C5.40357 0.986973 5.33333 1.15654 5.33333 1.33335V2.66669H2.66667C2.48986 2.66669 2.32029 2.73692 2.19526 2.86195C2.07024 2.98697 2 3.15654 2 3.33335C2 3.51016 2.07024 3.67973 2.19526 3.80476C2.32029 3.92978 2.48986 4.00002 2.66667 4.00002H13.3333C13.5101 4.00002 13.6797 3.92978 13.8047 3.80476C13.9298 3.67973 14 3.51016 14 3.33335C14 3.15654 13.9298 2.98697 13.8047 2.86195C13.6797 2.73692 13.5101 2.66669 13.3333 2.66669ZM6.66667 2.66669V2.00002H9.33333V2.66669H6.66667Z"
+                    fill="white"
+                  />
+                  <path
+                    d="M7.33333 11.3333V6.66667C7.33333 6.48986 7.2631 6.32029 7.13807 6.19526C7.01305 6.07024 6.84348 6 6.66667 6C6.48986 6 6.32029 6.07024 6.19526 6.19526C6.07024 6.32029 6 6.48986 6 6.66667V11.3333C6 11.5101 6.07024 11.6797 6.19526 11.8047C6.32029 11.9298 6.48986 12 6.66667 12C6.84348 12 7.01305 11.9298 7.13807 11.8047C7.2631 11.6797 7.33333 11.5101 7.33333 11.3333Z"
+                    fill="white"
+                  />
+                  <path
+                    d="M9.99935 11.3333V6.66667C9.99935 6.48986 9.92911 6.32029 9.80409 6.19526C9.67906 6.07024 9.50949 6 9.33268 6C9.15587 6 8.9863 6.07024 8.86128 6.19526C8.73625 6.32029 8.66602 6.48986 8.66602 6.66667V11.3333C8.66602 11.5101 8.73625 11.6797 8.86128 11.8047C8.9863 11.9298 9.15587 12 9.33268 12C9.50949 12 9.67906 11.9298 9.80409 11.8047C9.92911 11.6797 9.99935 11.5101 9.99935 11.3333Z"
+                    fill="white"
+                  />
+                </svg> </span
+              >Очистить все
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
   </div>
 </template>
@@ -47,13 +317,33 @@ export default {
         mousewheel: false,
         navigation: false,
       },
-
+      filterItems: [
+        {
+          name: "Город",
+          id: "0",
+        },
+        {
+          name: "Расположение",
+          id: "1",
+        },
+        {
+          name: "Вид спорта",
+          id: "2",
+        },
+        {
+          name: "Тип карты",
+          id: "3",
+        },
+        {
+          name: "Дополнительно",
+          id: "4",
+        },
+      ],
       // cards теперь управляется через setup
     };
   },
   name: "MapDemo",
   setup() {
-    // Основные переменные
     const companies = ref(
       demoCompany.cities[0].company.map((c, idx) => ({
         ...c,
@@ -802,7 +1092,6 @@ export default {
   }
 }
 
-/* Стили для кастомных маркеров */
 .custom-marker {
   background: white;
   border-radius: 8px;
@@ -858,6 +1147,122 @@ export default {
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+  }
+}
+
+.filter {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  &__overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+}
+.filter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  width: 56px;
+  height: 56px;
+  background-color: var(--darkSecondary);
+  position: absolute;
+  right: 20px;
+  top: 0;
+  border-radius: 50%;
+}
+
+.filter-drop {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: auto;
+  z-index: 9999;
+  background-color: #fff;
+  width: 100%;
+  border-radius: 16px 16px 0 0;
+  padding: 20px;
+}
+.choice-path {
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--ff);
+  background-color: rgba(215, 235, 255, 1);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  margin-bottom: 10px;
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+.choice {
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  &__title {
+    font-size: 26px;
+    font-weight: 500;
+    font-family: var(--stetica);
+  }
+  &__close {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: solid 1px rgba(229, 229, 229, 1);
+    cursor: pointer;
+    &:after,
+    &:before {
+      content: "";
+      display: block;
+      width: 50%;
+      height: 3px;
+      border-radius: 50px;
+      background-color: var(--darkSecondary);
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+    &:after {
+      transform: translate(-50%, -50%) rotate(-45deg);
+    }
+  }
+  &__btns {
+    .btn-transparent {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--darkSecondary);
+      }
     }
   }
 }
