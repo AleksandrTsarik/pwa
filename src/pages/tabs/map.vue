@@ -91,7 +91,10 @@
         <div class="choice">
           <div class="choice__blocks">
             <!-- разводящая страница -->
-            <div class="choice__block">
+            <div
+              class="choice__block choice-start"
+              :class="{ active: activeFilterTab === 0 }"
+            >
               <div class="choice__head">
                 <div class="choice__title">Фильтр</div>
                 <div class="choice__close"></div>
@@ -101,8 +104,15 @@
                   class="choice-path"
                   v-for="(item, i) in filterItems"
                   :key="i"
+                  @click="
+                    switchFilterTab(i + 1);
+                    $event.stopPropagation();
+                  "
+                  :class="{ active: activeFilterTab === i + 1 }"
                 >
-                  <span>{{ item.name }}</span>
+                  <p>
+                    {{ item.name }} <span class="choice-path__current"></span>
+                  </p>
                   <svg
                     width="8"
                     height="12"
@@ -122,8 +132,17 @@
               </div>
             </div>
             <!-- Город -->
-            <div class="choice__block">
-              <div class="choice__head">
+            <div
+              class="choice__block choice-tab"
+              :class="{ active: activeFilterTab === 1 }"
+            >
+              <div
+                class="choice__head"
+                @click="
+                  switchFilterTab(0);
+                  $event.stopPropagation();
+                "
+              >
                 <div class="choice__title">
                   <span
                     ><svg
@@ -146,10 +165,28 @@
                 </div>
                 <div class="choice__close"></div>
               </div>
+              <div class="choice__body">
+                <Checkbox
+                  v-for="city in cities"
+                  :key="city.id"
+                  inputType="radio"
+                  :label="city.name"
+                  name="city-selection"
+                />
+              </div>
             </div>
             <!-- Расположение -->
-            <div class="choice__block">
-              <div class="choice__head">
+            <div
+              class="choice__block choice-tab"
+              :class="{ active: activeFilterTab === 2 }"
+            >
+              <div
+                class="choice__head"
+                @click="
+                  switchFilterTab(0);
+                  $event.stopPropagation();
+                "
+              >
                 <div class="choice__title">
                   <span
                     ><svg
@@ -172,10 +209,28 @@
                 </div>
                 <div class="choice__close"></div>
               </div>
+              <div class="choice__body">
+                <Checkbox
+                  v-for="site in site"
+                  :key="site.id"
+                  inputType="radio"
+                  :label="site.name"
+                  name="site-selection"
+                />
+              </div>
             </div>
             <!-- Вид спорта -->
-            <div class="choice__block">
-              <div class="choice__head">
+            <div
+              class="choice__block choice-tab"
+              :class="{ active: activeFilterTab === 3 }"
+            >
+              <div
+                class="choice__head"
+                @click="
+                  switchFilterTab(0);
+                  $event.stopPropagation();
+                "
+              >
                 <div class="choice__title">
                   <span
                     ><svg
@@ -198,10 +253,28 @@
                 </div>
                 <div class="choice__close"></div>
               </div>
+              <div class="choice__body">
+                <Checkbox
+                  v-for="sportTypeItem in sportType"
+                  :key="sportTypeItem.id"
+                  inputType="checkbox"
+                  :label="sportTypeItem.name"
+                  name="sportType-selection"
+                />
+              </div>
             </div>
             <!-- Тип карты -->
-            <div class="choice__block">
-              <div class="choice__head">
+            <div
+              class="choice__block choice-tab"
+              :class="{ active: activeFilterTab === 4 }"
+            >
+              <div
+                class="choice__head"
+                @click="
+                  switchFilterTab(0);
+                  $event.stopPropagation();
+                "
+              >
                 <div class="choice__title">
                   <span
                     ><svg
@@ -224,10 +297,28 @@
                 </div>
                 <div class="choice__close"></div>
               </div>
+              <div class="choice__body">
+                <Checkbox
+                  v-for="cardTypeItem in cardType"
+                  :key="cardTypeItem.id"
+                  inputType="checkbox"
+                  :label="cardTypeItem.name"
+                  name="cardType-selection"
+                />
+              </div>
             </div>
             <!-- Дополнительно -->
-            <div class="choice__block">
-              <div class="choice__head">
+            <div
+              class="choice__block choice-tab"
+              :class="{ active: activeFilterTab === 5 }"
+            >
+              <div
+                class="choice__head"
+                @click="
+                  switchFilterTab(0);
+                  $event.stopPropagation();
+                "
+              >
                 <div class="choice__title">
                   <span
                     ><svg
@@ -249,6 +340,15 @@
                   Дополнительно
                 </div>
                 <div class="choice__close"></div>
+              </div>
+              <div class="choice__body">
+                <Checkbox
+                  v-for="extraItem in extra"
+                  :key="extraItem.id"
+                  inputType="checkbox"
+                  :label="extraItem.name"
+                  name="extra-selection"
+                />
               </div>
             </div>
           </div>
@@ -294,10 +394,12 @@
 import { ref, onMounted, shallowRef, onUnmounted } from "vue";
 import demoCompany from "../../demo/demoCompany";
 import Slider from "../../components/UI/TheSwiper.vue";
+import Checkbox from "../../components/UI/TheCheckbox.vue";
 
 export default {
   components: {
     Slider,
+    Checkbox,
   },
   data() {
     return {
@@ -339,10 +441,100 @@ export default {
           id: "4",
         },
       ],
+      activeFilterTab: 0, // Активный таб фильтра
+      cities: [], // Массив городов из demoCompany
+      site: [],
+      extra: [],
+      cardType: [],
+      sportType: [],
       // cards теперь управляется через setup
     };
   },
   name: "MapDemo",
+  mounted() {
+    // Инициализируем города из demoCompany
+    this.cities = demoCompany.cities.map((city) => ({
+      name: city.cityName,
+      id: city.cityName,
+    }));
+
+    // Инициализируем site из первого города
+    this.site = demoCompany.cities[0].site.map((site) => ({
+      name: site,
+      id: site,
+    }));
+
+    // Инициализируем sportType - получаем уникальные виды спорта из всех компаний
+    const allSportTypes = new Set();
+    demoCompany.cities.forEach((city) => {
+      city.company.forEach((company) => {
+        if (company.sportType && Array.isArray(company.sportType)) {
+          company.sportType.forEach((sport) => {
+            allSportTypes.add(sport);
+          });
+        }
+      });
+    });
+
+    this.sportType = Array.from(allSportTypes).map((sport) => ({
+      name: sport,
+      id: sport,
+    }));
+
+    // Инициализируем cardType - получаем уникальные типы карт из всех компаний
+    const allCardTypes = new Set();
+    demoCompany.cities.forEach((city) => {
+      city.company.forEach((company) => {
+        if (company.cardType && Array.isArray(company.cardType)) {
+          company.cardType.forEach((card) => {
+            allCardTypes.add(card);
+          });
+        }
+      });
+    });
+
+    this.cardType = Array.from(allCardTypes).map((card) => ({
+      name: card,
+      id: card,
+    }));
+
+    // Инициализируем extra - получаем Дополнительно из всех компаний
+    const allExtra = new Set();
+    demoCompany.cities.forEach((city) => {
+      city.company.forEach((company) => {
+        if (company.extra && Array.isArray(company.extra)) {
+          company.extra.forEach((item) => {
+            allExtra.add(item);
+          });
+        }
+      });
+    });
+
+    this.extra = Array.from(allExtra).map((item) => ({
+      name: item,
+      id: item,
+    }));
+  },
+  methods: {
+    // Метод для переключения табов фильтра
+    switchFilterTab(tabIndex) {
+      console.log("switchFilterTab вызван с индексом:", tabIndex);
+      this.activeFilterTab = tabIndex;
+      console.log("activeFilterTab установлен в:", tabIndex);
+
+      // Проверяем, что происходит с классами
+      this.$nextTick(() => {
+        const tabs = document.querySelectorAll(".choice__block");
+        tabs.forEach((tab, index) => {
+          console.log(
+            `Таб ${index}:`,
+            tab.classList.contains("active"),
+            tab.className
+          );
+        });
+      });
+    },
+  },
   setup() {
     const companies = ref(
       demoCompany.cities[0].company.map((c, idx) => ({
@@ -666,7 +858,7 @@ export default {
               }</h3><p>${company.address}</p><p>Рейтинг: ★ ${
                 company.rating || "0"
               }</p><p>Цена: ${company.price || "Не указана"}</p></div>`,
-              // Сохраняем ID компании в данных метки для удобства
+              // Сохраняем ID компании в данные метки для удобства
               companyId: company.id,
             },
             {
@@ -804,33 +996,6 @@ export default {
           });
 
           // Логируем HTML-код видимых маркеров
-          visibleMarkers.forEach((marker) => {
-            // Попробуем получить HTML-код маркера через свойство iconContent
-            const markerHtml = marker.properties.get("iconContent");
-            if (markerHtml) {
-              console.log("HTML-код видимого маркера:", markerHtml);
-            } else {
-              // Попробуем получить HTML-код маркера через свойство balloonContent
-              const balloonContent = marker.properties.get("balloonContent");
-              if (balloonContent) {
-                console.log(
-                  "HTML-код видимого маркера (balloonContent):",
-                  balloonContent
-                );
-              } else {
-                // Попробуем получить HTML-код маркера через свойство hintContent
-                const hintContent = marker.properties.get("hintContent");
-                if (hintContent) {
-                  console.log(
-                    "HTML-код видимого маркера (hintContent):",
-                    hintContent
-                  );
-                } else {
-                  console.log("HTML-код маркера не доступен");
-                }
-              }
-            }
-          });
         } catch (error) {
           // Ошибка обработки свайпа слайдера
         }
@@ -1192,6 +1357,13 @@ export default {
   width: 100%;
   border-radius: 16px 16px 0 0;
   padding: 20px;
+  max-height: 80vh;
+  overflow-y: auto;
+  height: 100%;
+  overflow: hidden;
+  form {
+    height: 100%;
+  }
 }
 .choice-path {
   border-radius: 50px;
@@ -1205,11 +1377,46 @@ export default {
   justify-content: space-between;
   cursor: pointer;
   margin-bottom: 10px;
+
   &:last-child {
     margin-bottom: 0;
   }
+  p {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  &__current {
+  }
 }
 .choice {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  &__blocks {
+    flex-grow: 1;
+  }
+  &__block {
+    &.choice-tab {
+      height: 0;
+      padding: 0;
+      overflow: hidden;
+      position: absolute;
+      opacity: 0;
+      left: 0;
+      right: 0;
+      top: 0;
+      background-color: #fff;
+      z-index: 9999;
+      &.active {
+        animation: slideIn 0.3s ease-out forwards;
+        height: 100%;
+        opacity: 1;
+        padding: 20px;
+      }
+    }
+  }
   &__head {
     display: flex;
     align-items: center;
@@ -1249,6 +1456,7 @@ export default {
     }
   }
   &__btns {
+    margin-top: auto;
     .btn-transparent {
       display: flex;
       align-items: center;
@@ -1264,6 +1472,16 @@ export default {
         background-color: var(--darkSecondary);
       }
     }
+  }
+}
+@keyframes slideIn {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 </style>
