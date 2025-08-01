@@ -335,26 +335,31 @@ export default {
 
           // Создаем кастомный HTML для маркера
           const markerHtml = `
-        <div class="custom-marker" data-company-id="${company.id}">
-          <div class="marker-content">
-            <div class="marker-logo">
-              <img src="${company.logo || "/img/placeholder.jpg"}" alt="${
+            <div class="custom-marker" data-company-id="${company.id}">
+              <div class="custom-marker__content">
+                <div class="custom-marker__logo">
+                  <img src="${company.logo || "/img/placeholder.jpg"}" alt="${
             company.name
-          }" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" onerror="this.src='/img/placeholder.jpg'"/>
+          }"/>
+                </div>
+                <div class="custom-marker__descr">
+                  <div class="custom-marker__info">
+                    <div class="custom-marker__name">${company.name}</div>
+                    <div class="custom-marker__rating">★ ${
+                      company.rating || "0"
+                    }</div>
+                </div>
+                  ${
+                    company.price
+                      ? `<div class="custom-marker__price">${company.price}</div>`
+                      : ""
+                  }
+                </div>
+                
+              </div>
+              <div class="marker-tail"></div>
             </div>
-            <div class="marker-info">
-              <div class="marker-name">${company.name}</div>
-              <div class="marker-rating">★ ${company.rating || "0"}</div>
-              ${
-                company.price
-                  ? `<div class="marker-price">${company.price}</div>`
-                  : ""
-              }
-            </div>
-          </div>
-          <div class="marker-tail"></div>
-        </div>
-      `;
+          `;
 
           // Создаем простой кастомный макет
           const CustomLayout =
@@ -801,75 +806,59 @@ export default {
 .custom-marker {
   background: white;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  padding: 8px;
   min-width: 120px;
   max-width: 150px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 2px solid #007bff;
+  border-radius: 50px;
+  padding: 2px;
+  filter: drop-shadow(0 0 1px #000);
   position: relative;
-
-  &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    border-color: #0056b3;
-  }
-
-  /* Стили для активного состояния */
+  // overflow: hidden;
   &.active {
-    background-color: #007bff !important;
-    border-color: green !important;
+    filter: drop-shadow(0 0 2px #000);
   }
-
-  .marker-content {
+  &__content {
+    display: grid;
+    grid-template-columns: 35px auto;
+    gap: 5px;
+  }
+  &__descr {
+    text-align: left;
+    padding-left: 40px;
+  }
+  &__info {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 5px;
   }
-
-  .marker-logo {
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-
+  &__name {
+    font-size: 14px;
+    font-weight: 700;
+  }
+  &__rating {
+    color: #4d4d4d;
+    white-space: nowrap;
+  }
+  &__price {
+    color: #4d4d4d;
+    font-size: 12px;
+    margin-top: 5px;
+    white-space: nowrap;
+  }
+  &__logo {
+    border-radius: 50%;
+    overflow: hidden;
+    display: block;
+    height: 35px;
+    width: 35px;
+    position: absolute;
+    left: -10px;
+    top: 50%;
+    transform: translateY(-50%);
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      border-radius: 4px;
     }
-  }
-
-  .marker-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .marker-name {
-    font-size: 12px;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .marker-rating {
-    font-size: 10px;
-    color: #ffc107;
-    font-weight: bold;
-    margin-bottom: 2px;
-  }
-
-  .marker-price {
-    font-size: 10px;
-    color: #28a745;
-    font-weight: bold;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 }
 </style>
