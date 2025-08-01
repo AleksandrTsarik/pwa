@@ -85,6 +85,7 @@
                 </svg>
                 <p>{{ slide.address }}</p>
               </div>
+              <p>{{ slide.coordinates }}</p>
             </div>
           </div>
           <div class="slider__body">
@@ -141,7 +142,7 @@ export default {
   },
   methods: {
     handleSlideClick(slide) {
-      console.log("Клик по слайду:", slide);
+      // console.log("Клик по слайду:", slide);
       this.$emit("slide-click", slide);
     },
     handleSlideChange(swiper) {
@@ -152,14 +153,14 @@ export default {
         activeSlide.coordinates &&
         activeSlide.coordinates.length === 2
       ) {
-        console.log(
-          "Центрируем карту на:",
-          activeSlide.name,
-          activeSlide.coordinates
-        );
+        // console.log(
+        //   "Центрируем карту на:",
+        //   activeSlide.name,
+        //   activeSlide.coordinates
+        // );
         // Эмитим событие для центрирования карты
         this.$emit("slide-change", activeSlide);
-        console.log("🎯 СОБЫТИЕ slide-change ЭМИТИРОВАНО!");
+        // console.log("🎯 СОБЫТИЕ slide-change ЭМИТИРОВАНО!");
       } else {
         console.log(
           "Активный слайд не имеет координат или данных:",

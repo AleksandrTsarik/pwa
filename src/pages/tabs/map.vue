@@ -9,7 +9,6 @@
       :slider="cards"
       :typeSlider="'map'"
       :class="'slider-map slider-swiper'"
-      @slide-click="onSlideClick"
       @slide-change="onSlideChange"
     />
 
@@ -51,7 +50,7 @@ export default {
   data() {
     return {
       optionsSlider: {
-        loop: true,
+        loop: false,
         centeredSlides: true,
         spaceBetween: 20,
         slidesPerView: 1,
@@ -442,6 +441,7 @@ export default {
 
           // Добавляем класс active к выбранному маркеру
           const selectedMarker = companyMarkers.value.get(slideData.id);
+          console.log(selectedMarker.getElement());
           if (selectedMarker && selectedMarker.getElement) {
             const markerElement = selectedMarker.getElement();
             if (markerElement) {
