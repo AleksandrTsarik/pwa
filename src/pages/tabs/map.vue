@@ -433,36 +433,63 @@ export default {
 
     // Обработчик изменения слайдера - добавляем класс active к маркеру
     const onSlideChange = (slideData) => {
-      if (slideData && slideData.id && mapInstance.value) {
+      // Проверяем, что это правильные данные слайда, а не объект Swiper
+      if (
+        slideData &&
+        typeof slideData === "object" &&
+        !slideData.__swiper__ && // Не является объектом Swiper
+        slideData.coordinates &&
+        mapInstance.value
+      ) {
         try {
           // Убираем класс active со всех маркеров
+          const allCustomMarkers = document.querySelectorAll(".custom-marker");
+          allCustomMarkers.forEach((marker) => {
+            marker.classList.remove("active");
+          });
+
+          // Находим маркер с совпадающими координатами
+          let matchingMarker = null;
           companyMarkers.value.forEach((marker, id) => {
             try {
-              if (marker && marker.getElement) {
-                const markerElement = marker.getElement();
-                if (markerElement) {
-                  const customMarker =
-                    markerElement.querySelector(".custom-marker");
-                  if (customMarker) {
-                    customMarker.classList.remove("active");
-                  }
-                }
+              const markerCoordinates = marker.geometry.getCoordinates();
+              if (
+                markerCoordinates &&
+                markerCoordinates[0] === slideData.coordinates[0] &&
+                markerCoordinates[1] === slideData.coordinates[1]
+              ) {
+                matchingMarker = marker;
               }
             } catch (error) {
-              // Ошибка обработки маркера
+              // Ошибка получения координат маркера
             }
           });
 
-          // Добавляем класс active к выбранному маркеру
-          const selectedMarker = companyMarkers.value.get(slideData.id);
-          if (selectedMarker && selectedMarker.getElement) {
-            const markerElement = selectedMarker.getElement();
-            if (markerElement) {
-              const customMarker =
-                markerElement.querySelector(".custom-marker");
-              if (customMarker) {
-                customMarker.classList.add("active");
+          // Добавляем класс active к маркеру с совпадающими координатами
+          if (matchingMarker) {
+            try {
+              // Ищем все элементы .custom-marker в DOM
+              const allCustomMarkers =
+                document.querySelectorAll(".custom-marker");
+
+              let targetMarker = null;
+              allCustomMarkers.forEach((marker) => {
+                const dataCompanyId = marker.getAttribute("data-company-id");
+
+                // Проверяем, соответствует ли этот маркер найденному по ID
+                if (
+                  dataCompanyId &&
+                  matchingMarker.properties.get("companyId") == dataCompanyId
+                ) {
+                  targetMarker = marker;
+                }
+              });
+
+              if (targetMarker) {
+                targetMarker.classList.add("active");
               }
+            } catch (error) {
+              // Ошибка при работе с маркером
             }
           }
 
@@ -792,11 +819,7 @@ export default {
   /* Стили для активного состояния */
   &.active {
     background-color: #007bff !important;
-    border-color: #0056b3 !important;
-    color: white !important;
-    transform: scale(1.1) !important;
-    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4) !important;
-    z-index: 1000 !important;
+    border-color: green !important;
   }
 
   .marker-content {
