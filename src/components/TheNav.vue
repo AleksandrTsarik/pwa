@@ -126,6 +126,14 @@ export default {
       selectedIndex: this.selectedTab,
     };
   },
+  watch: {
+    selectedTab: {
+      handler(newValue) {
+        this.selectedIndex = newValue;
+      },
+      immediate: true,
+    },
+  },
   methods: {
     selectTab(index) {
       this.selectedIndex = index;

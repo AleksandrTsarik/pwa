@@ -556,7 +556,7 @@
 
 <script>
 import { ref, onMounted, shallowRef, onUnmounted } from "vue";
-import demoCompany from "../../demo/demoCompany";
+import companyAPI, { demoCompany } from "../../demo/demoCompany";
 import Slider from "../../components/UI/TheSwiper.vue";
 import Checkbox from "../../components/UI/TheCheckbox.vue";
 
@@ -573,7 +573,7 @@ export default {
         spaceBetween: 20,
         slidesPerView: 1,
         slidesPerGroup: 1,
-        autoHeight: true, // Автоматическая высота слайдов
+        autoHeight: true,
         pagination: {
           clickable: true,
           dynamicBullets: true,
@@ -627,74 +627,93 @@ export default {
     };
   },
   name: "MapDemo",
-  mounted() {
-    // Инициализируем города из demoCompany
-    this.cities = demoCompany.cities.map((city) => ({
-      name: city.cityName,
-      id: city.cityName,
-    }));
-    this.filteredCities = [...this.cities];
+  async mounted() {
+    try {
+      // Загружаем данные из API
+      const data = await companyAPI.getAllData();
 
-    // Инициализируем site из первого города
-    this.site = demoCompany.cities[0].site.map((site) => ({
-      name: site,
-      id: site,
-    }));
+      // Инициализируем города
+      this.cities = data.cities.map((city) => ({
+        name: city.cityName,
+        id: city.cityName,
+      }));
+      this.filteredCities = [...this.cities];
 
-    // Инициализируем sportType - получаем уникальные виды спорта из всех компаний
-    const allSportTypes = new Set();
-    demoCompany.cities.forEach((city) => {
-      city.company.forEach((company) => {
-        if (company.sportType && Array.isArray(company.sportType)) {
-          company.sportType.forEach((sport) => {
-            allSportTypes.add(sport);
-          });
-        }
+      // Инициализируем site из первого города
+      if (data.cities.length > 0) {
+        this.site = data.cities[0].site.map((site) => ({
+          name: site,
+          id: site,
+        }));
+      }
+
+      // Инициализируем sportType - получаем уникальные виды спорта из всех компаний
+      const allSportTypes = new Set();
+      data.cities.forEach((city) => {
+        city.company.forEach((company) => {
+          if (company.sportType && Array.isArray(company.sportType)) {
+            company.sportType.forEach((sport) => {
+              allSportTypes.add(sport);
+            });
+          }
+        });
       });
-    });
 
-    this.sportType = Array.from(allSportTypes).map((sport) => ({
-      name: sport,
-      id: sport,
-    }));
+      this.sportType = Array.from(allSportTypes).map((sport) => ({
+        name: sport,
+        id: sport,
+      }));
 
-    // Инициализируем cardType - получаем уникальные типы карт из всех компаний
-    const allCardTypes = new Set();
-    demoCompany.cities.forEach((city) => {
-      city.company.forEach((company) => {
-        if (company.cardType && Array.isArray(company.cardType)) {
-          company.cardType.forEach((card) => {
-            allCardTypes.add(card);
-          });
-        }
+      // Инициализируем cardType - получаем уникальные типы карт из всех компаний
+      const allCardTypes = new Set();
+      data.cities.forEach((city) => {
+        city.company.forEach((company) => {
+          if (company.cardType && Array.isArray(company.cardType)) {
+            company.cardType.forEach((card) => {
+              allCardTypes.add(card);
+            });
+          }
+        });
       });
-    });
 
-    this.cardType = Array.from(allCardTypes).map((card) => ({
-      name: card,
-      id: card,
-    }));
+      this.cardType = Array.from(allCardTypes).map((card) => ({
+        name: card,
+        id: card,
+      }));
 
-    // Инициализируем extra - получаем Дополнительно из всех компаний
-    const allExtra = new Set();
-    demoCompany.cities.forEach((city) => {
-      city.company.forEach((company) => {
-        if (company.extra && Array.isArray(company.extra)) {
-          company.extra.forEach((item) => {
-            allExtra.add(item);
-          });
-        }
+      // Инициализируем extra - получаем Дополнительно из всех компаний
+      const allExtra = new Set();
+      data.cities.forEach((city) => {
+        city.company.forEach((company) => {
+          if (company.extra && Array.isArray(company.extra)) {
+            company.extra.forEach((item) => {
+              allExtra.add(item);
+            });
+          }
+        });
       });
-    });
 
-    this.extra = Array.from(allExtra).map((item) => ({
-      name: item,
-      id: item,
-    }));
+      this.extra = Array.from(allExtra).map((item) => ({
+        name: item,
+        id: item,
+      }));
 
-    // Устанавливаем первый город как выбранный по умолчанию
-    if (this.cities.length > 0) {
-      this.selectedFilters.city = this.cities[0];
+      // Устанавливаем первый город как выбранный по умолчанию
+      if (this.cities.length > 0) {
+        this.selectedFilters.city = this.cities[0];
+      }
+
+      // Сохраняем данные для использования в фильтрации
+      this.apiData = data;
+
+      // Инициализируем данные в setup
+      if (this.initializeData) {
+        this.initializeData(data);
+      }
+    } catch (error) {
+      console.error("Ошибка загрузки данных:", error);
+      // Fallback к старым данным если API недоступен
+      this.initializeWithDemoData();
     }
   },
   computed: {
@@ -762,7 +781,7 @@ export default {
     onCityChange(city) {
       this.selectedFilters.city = city;
       // Обновляем site для выбранного города
-      const selectedCity = demoCompany.cities.find(
+      const selectedCity = this.apiData.cities.find(
         (c) => c.cityName === city.name
       );
       if (selectedCity) {
@@ -783,7 +802,7 @@ export default {
 
     // Центрирование карты на выбранном городе
     centerMapOnCity(city) {
-      const selectedCity = demoCompany.cities.find(
+      const selectedCity = this.apiData.cities.find(
         (c) => c.cityName === city.name
       );
       if (selectedCity && selectedCity.cityLocaltion) {
@@ -848,12 +867,12 @@ export default {
 
     // Применение фильтров
     applyFilters() {
-      if (!this.canApplyFilters) return;
+      if (!this.canApplyFilters || !this.apiData) return;
 
       // Фильтруем компании на основе выбранных фильтров
       let filteredCompanies = [];
 
-      demoCompany.cities.forEach((city) => {
+      this.apiData.cities.forEach((city) => {
         // Проверяем фильтр города
         if (
           this.selectedFilters.city &&
@@ -949,14 +968,16 @@ export default {
 
       // Обновляем карту со всеми компаниями из всех городов
       const allCompanies = [];
-      demoCompany.cities.forEach((city) => {
-        city.company.forEach((company) => {
-          allCompanies.push({
-            ...company,
-            cityName: city.cityName,
+      if (this.apiData) {
+        this.apiData.cities.forEach((city) => {
+          city.company.forEach((company) => {
+            allCompanies.push({
+              ...company,
+              cityName: city.cityName,
+            });
           });
         });
-      });
+      }
 
       // Обновляем данные на карте через setup функцию
       this.$nextTick(() => {
@@ -1001,24 +1022,8 @@ export default {
     },
   },
   setup() {
-    // Инициализируем companies со всеми компаниями из всех городов
-    const allCompanies = [];
-    demoCompany.cities.forEach((city, cityIndex) => {
-      city.company.forEach((company, companyIndex) => {
-        allCompanies.push({
-          ...company,
-          id: allCompanies.length + 1,
-          image: company.logo || null,
-          price: company.price || null,
-          rating: company.rating || null,
-          logo: company.logo || "/img/placeholder.jpg",
-          marker: company.marker || "/img/marker.png",
-          cityName: city.cityName,
-        });
-      });
-    });
-
-    const companies = ref(allCompanies);
+    // Инициализируем companies как пустой массив, данные будут загружены асинхронно
+    const companies = ref([]);
     const cards = ref([]); // Добавляем ref для cards
     const selectedCompany = ref(null);
     const mapInstance = shallowRef(null);
@@ -1029,6 +1034,30 @@ export default {
 
     // Координаты Москвы
     const moscowCoords = [55.755819, 37.617644];
+
+    // Функция для инициализации данных после загрузки из API
+    const initializeData = (apiData) => {
+      if (!apiData || !apiData.cities) return;
+
+      // Собираем все компании из всех городов
+      const allCompanies = [];
+      apiData.cities.forEach((city, cityIndex) => {
+        city.company.forEach((company, companyIndex) => {
+          allCompanies.push({
+            ...company,
+            id: allCompanies.length + 1,
+            image: company.logo || null,
+            price: company.price || null,
+            rating: company.rating || null,
+            logo: company.logo || "/img/placeholder.jpg",
+            marker: company.marker || "/img/marker.png",
+            cityName: city.cityName,
+          });
+        });
+      });
+
+      companies.value = allCompanies;
+    };
 
     // Функция для обновления компаний на карте на основе фильтров
     const updateCompaniesWithFilters = (filteredCompanies) => {
@@ -1122,25 +1151,8 @@ export default {
     const checkUserInDemoCities = (userCoords) => {
       const [userLng, userLat] = userCoords;
 
-      for (const city of demoCompany.cities || []) {
-        if (city.cityLocaltion && city.cityLocaltion.length === 2) {
-          const [cityLat, cityLng] = city.cityLocaltion;
-
-          // Проверяем расстояние (примерно 50 км)
-          const distance = Math.sqrt(
-            Math.pow(userLng - cityLng, 2) + Math.pow(userLat - cityLat, 2)
-          );
-
-          if (distance < 0.5) {
-            return {
-              inDemoCity: true,
-              city: city,
-              coordinates: [cityLng, cityLat],
-            };
-          }
-        }
-      }
-
+      // Эта функция будет обновлена после загрузки данных
+      // Пока возвращаем null
       return {
         inDemoCity: false,
         city: null,
@@ -1667,8 +1679,89 @@ export default {
       onSlideChange,
       forceCenterOnMoscow,
       mapInstance, // Экспортируем mapInstance для использования в methods
-      updateMapWithFilteredDataFromSetup: updateMapWithFilteredData, // Экспортируем функцию для использования в methods
+      initializeData, // Экспортируем функцию инициализации данных
+      updateMapWithFilteredDataFromSetup: updateCompaniesWithFilters, // Экспортируем функцию для использования в methods
     };
+  },
+
+  // Fallback метод для инициализации с демо данными
+  initializeWithDemoData() {
+    // Инициализируем города из demoCompany
+    this.cities = demoCompany.cities.map((city) => ({
+      name: city.cityName,
+      id: city.cityName,
+    }));
+    this.filteredCities = [...this.cities];
+
+    // Инициализируем site из первого города
+    this.site = demoCompany.cities[0].site.map((site) => ({
+      name: site,
+      id: site,
+    }));
+
+    // Инициализируем sportType - получаем уникальные виды спорта из всех компаний
+    const allSportTypes = new Set();
+    demoCompany.cities.forEach((city) => {
+      city.company.forEach((company) => {
+        if (company.sportType && Array.isArray(company.sportType)) {
+          company.sportType.forEach((sport) => {
+            allSportTypes.add(sport);
+          });
+        }
+      });
+    });
+
+    this.sportType = Array.from(allSportTypes).map((sport) => ({
+      name: sport,
+      id: sport,
+    }));
+
+    // Инициализируем cardType - получаем уникальные типы карт из всех компаний
+    const allCardTypes = new Set();
+    demoCompany.cities.forEach((city) => {
+      city.company.forEach((company) => {
+        if (company.cardType && Array.isArray(company.cardType)) {
+          company.cardType.forEach((card) => {
+            allCardTypes.add(card);
+          });
+        }
+      });
+    });
+
+    this.cardType = Array.from(allCardTypes).map((card) => ({
+      name: card,
+      id: card,
+    }));
+
+    // Инициализируем extra - получаем Дополнительно из всех компаний
+    const allExtra = new Set();
+    demoCompany.cities.forEach((city) => {
+      city.company.forEach((company) => {
+        if (company.extra && Array.isArray(company.extra)) {
+          company.extra.forEach((item) => {
+            allExtra.add(item);
+          });
+        }
+      });
+    });
+
+    this.extra = Array.from(allExtra).map((item) => ({
+      name: item,
+      id: item,
+    }));
+
+    // Устанавливаем первый город как выбранный по умолчанию
+    if (this.cities.length > 0) {
+      this.selectedFilters.city = this.cities[0];
+    }
+
+    // Сохраняем данные для использования в фильтрации
+    this.apiData = demoCompany;
+
+    // Инициализируем данные в setup
+    if (this.initializeData) {
+      this.initializeData(demoCompany);
+    }
   },
 };
 </script>

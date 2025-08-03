@@ -1,4 +1,5 @@
-export default {
+// Статические данные для демо
+const DEMO_DATA = {
   cities: [
     {
       cityName: "Москва",
@@ -46,7 +47,7 @@ export default {
           studio: "small",
           description: "Фитнес-клуб",
           address: "Страстной бульвар, 10 к1",
-          coordinates: [55.766106, 37.611482], // Исправляем порядок координат
+          coordinates: [55.766106, 37.611482],
           phone: "+7 (495) 255‒59‒25",
           email: "info@ddxfitness.ru",
           website: "https://ddxfitness.ru",
@@ -168,7 +169,7 @@ export default {
           description: "Фитнес-клуб",
           studio: "small",
           address: "Смоленская улица, 8",
-          coordinates: [55.746274, 37.580391], // Исправляем порядок координат
+          coordinates: [55.746274, 37.580391],
           phone: "+7 (495) 859‒45‒57",
           email: "smolenskaya@xfit.su",
           website: "www.xfit.ru",
@@ -232,7 +233,6 @@ export default {
           cardType: ["silver",],
           sportType: ["плавание", "бег", "тренажерный зал", "кроссфит"],
         },
-
         {
           name: "DDX Fitness",
           description: "Фитнес-клуб",
@@ -271,3 +271,190 @@ export default {
     },
   ],
 };
+
+// Конфигурация API
+const API_CONFIG = {
+  baseURL: 'https://api.example.com', // Замените на реальный URL API
+  endpoints: {
+    cities: '/api/cities',
+    companies: '/api/companies',
+    filters: '/api/filters'
+  }
+};
+
+// Класс для работы с API (имитация)
+class CompanyAPI {
+  constructor() {
+    this.baseURL = API_CONFIG.baseURL;
+  }
+
+  // Имитация задержки сети
+  async simulateNetworkDelay(ms = 100) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  // Общий метод для POST запросов (имитация)
+  async makeRequest(endpoint, data = {}) {
+    try {
+      // Имитируем задержку сети
+      await this.simulateNetworkDelay();
+      
+      console.log(`API Request: ${endpoint}`, data);
+
+      // Обрабатываем разные endpoints
+      switch (endpoint) {
+        case API_CONFIG.endpoints.cities:
+          return { data: DEMO_DATA.cities };
+        
+        case API_CONFIG.endpoints.companies:
+          return this.filterCompanies(data);
+        
+        case API_CONFIG.endpoints.filters:
+          return this.getFilterOptions();
+        
+        default:
+          throw new Error(`Unknown endpoint: ${endpoint}`);
+      }
+    } catch (error) {
+      console.error('API request failed:', error);
+      throw error;
+    }
+  }
+
+  // Фильтрация компаний по переданным фильтрам
+  filterCompanies(filters = {}) {
+    let filteredCompanies = [];
+
+    DEMO_DATA.cities.forEach((city) => {
+      // Фильтр по городу
+      if (filters.city && city.cityName !== filters.city) {
+        return;
+      }
+
+      city.company.forEach((company) => {
+        let shouldInclude = true;
+
+        // Фильтр по расположению (site)
+        if (filters.site && (!company.site || !company.site.includes(filters.site))) {
+          shouldInclude = false;
+        }
+
+        // Фильтр по виду спорта
+        if (filters.sportType && filters.sportType.length > 0) {
+          const hasMatchingSportType = filters.sportType.some(
+            (sportType) => company.sportType && company.sportType.includes(sportType)
+          );
+          if (!hasMatchingSportType) {
+            shouldInclude = false;
+          }
+        }
+
+        // Фильтр по типу карты
+        if (filters.cardType && filters.cardType.length > 0) {
+          const hasMatchingCardType = filters.cardType.some(
+            (cardType) => company.cardType && company.cardType.includes(cardType)
+          );
+          if (!hasMatchingCardType) {
+            shouldInclude = false;
+          }
+        }
+
+        // Фильтр по дополнительным условиям
+        if (filters.extra && filters.extra.length > 0) {
+          const hasMatchingExtra = filters.extra.some(
+            (extra) => company.extra && company.extra.includes(extra)
+          );
+          if (!hasMatchingExtra) {
+            shouldInclude = false;
+          }
+        }
+
+        if (shouldInclude) {
+          filteredCompanies.push({
+            ...company,
+            cityName: city.cityName,
+          });
+        }
+      });
+    });
+
+    return { data: filteredCompanies };
+  }
+
+  // Получение опций фильтров
+  getFilterOptions() {
+    const allSportTypes = new Set();
+    const allCardTypes = new Set();
+    const allExtra = new Set();
+
+    DEMO_DATA.cities.forEach((city) => {
+      city.company.forEach((company) => {
+        if (company.sportType && Array.isArray(company.sportType)) {
+          company.sportType.forEach((sport) => allSportTypes.add(sport));
+        }
+        if (company.cardType && Array.isArray(company.cardType)) {
+          company.cardType.forEach((card) => allCardTypes.add(card));
+        }
+        if (company.extra && Array.isArray(company.extra)) {
+          company.extra.forEach((item) => allExtra.add(item));
+        }
+      });
+    });
+
+    return {
+      data: {
+        sportTypes: Array.from(allSportTypes),
+        cardTypes: Array.from(allCardTypes),
+        extra: Array.from(allExtra)
+      }
+    };
+  }
+
+  // Получение всех городов
+  async getCities() {
+    return await this.makeRequest(API_CONFIG.endpoints.cities);
+  }
+
+  // Получение компаний по фильтрам
+  async getCompanies(filters = {}) {
+    return await this.makeRequest(API_CONFIG.endpoints.companies, filters);
+  }
+
+  // Получение опций фильтров
+  async getFilterOptions() {
+    return await this.makeRequest(API_CONFIG.endpoints.filters);
+  }
+
+  // Получение всех данных (города + компании) - для обратной совместимости
+  async getAllData() {
+    try {
+      const [cities, companies] = await Promise.all([
+        this.getCities(),
+        this.getCompanies()
+      ]);
+
+      return {
+        cities: cities.data || cities,
+        companies: companies.data || companies
+      };
+    } catch (error) {
+      console.error('Failed to fetch all data:', error);
+      throw error;
+    }
+  }
+}
+
+// Создаем экземпляр API
+const companyAPI = new CompanyAPI();
+
+// Экспортируем API для использования в компонентах
+export default companyAPI;
+
+// Для обратной совместимости экспортируем также старые методы
+export const getCities = () => companyAPI.getCities();
+export const getCompanies = (filters) => companyAPI.getCompanies(filters);
+export const getFilterOptions = () => companyAPI.getFilterOptions();
+export const getAllData = () => companyAPI.getAllData();
+
+// Экспортируем старые данные для обратной совместимости
+export const demoCompany = DEMO_DATA;
