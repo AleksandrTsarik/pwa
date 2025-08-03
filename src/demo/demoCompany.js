@@ -134,7 +134,7 @@ export default {
             "ZUMBA",
             "+20 занятий",
           ],
-          cardType: ["gold", "silver", "black"],
+          cardType: ["black"],
           sportType: ["плавание", "бег", "тренажерный зал", "кроссфит"],
         },
         {
@@ -160,7 +160,7 @@ export default {
             "ZUMBA",
             "+50 занятий",
           ],
-          cardType: ["gold", "silver", "black"],
+          cardType: ["black"],
           sportType: ["плавание", "бег", "тренажерный зал", "кроссфит"],
         },
         {
@@ -229,7 +229,7 @@ export default {
             "Есть парковка",
             "Душ",
           ],
-          cardType: ["gold", "silver", "black"],
+          cardType: ["silver",],
           sportType: ["плавание", "бег", "тренажерный зал", "кроссфит"],
         },
 
@@ -264,7 +264,7 @@ export default {
             "Занятия для беременных",
             "Душ",
           ],
-          cardType: ["gold", "silver", "black"],
+          cardType: ["black"],
           sportType: ["плавание", "бег", "тренажерный зал"],
         },
       ],

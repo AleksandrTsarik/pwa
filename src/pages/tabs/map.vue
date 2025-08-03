@@ -7,7 +7,7 @@
     </div>
     <div class="map__body">
       <div id="yandexMap" class="map-container"></div>
-      <div class="filter-btn">
+      <div class="filter-btn" @click="toggleFilter" @click.stop.prevent>
         <svg
           width="20"
           height="20"
@@ -83,11 +83,11 @@
       />
     </div>
   </div>
-  <div class="filter">
-    <div class="filter__overlay"></div>
+  <div class="filter" :class="{ active: isFilterOpen }">
+    <div class="filter__overlay" @click="closeFilter" @click.stop.prevent></div>
 
     <div class="filter-drop">
-      <form>
+      <form @submit.prevent>
         <div class="choice">
           <div class="choice__blocks">
             <!-- разводящая страница -->
@@ -97,7 +97,11 @@
             >
               <div class="choice__head">
                 <div class="choice__title">Фильтр</div>
-                <div class="choice__close"></div>
+                <div
+                  class="choice__close"
+                  @click="closeFilter"
+                  @click.stop.prevent
+                ></div>
               </div>
               <div class="choice__body">
                 <div
@@ -111,7 +115,13 @@
                   :class="{ active: activeFilterTab === i + 1 }"
                 >
                   <p>
-                    {{ item.name }} <span class="choice-path__current"></span>
+                    {{ item.name }}
+                    <span
+                      class="choice-path__current"
+                      v-if="selectedFiltersCount[item.id] > 0"
+                    >
+                      {{ selectedFiltersCount[item.id] }}
+                    </span>
                   </p>
                   <svg
                     width="8"
@@ -133,17 +143,18 @@
             </div>
             <!-- Город -->
             <div
-              class="choice__block choice-tab"
+              class="choice__block choice-tab choice-tab__city"
               :class="{ active: activeFilterTab === 1 }"
             >
-              <div
-                class="choice__head"
-                @click="
-                  switchFilterTab(0);
-                  $event.stopPropagation();
-                "
-              >
-                <div class="choice__title">
+              <div class="choice__head choice__head-searche">
+                <div
+                  class="choice__title"
+                  @click="
+                    switchFilterTab(0);
+                    $event.stopPropagation();
+                  "
+                  @click.stop.prevent
+                >
                   <span
                     ><svg
                       width="16"
@@ -163,16 +174,63 @@
                   </span>
                   Город
                 </div>
-                <div class="choice__close"></div>
+                <div
+                  class="choice__close"
+                  @click="switchFilterTab(0)"
+                  @click.stop.prevent
+                ></div>
+                <div class="choice-searche">
+                  <label>
+                    <input
+                      type="text"
+                      placeholder="Поиск"
+                      v-model="citySearchQuery"
+                      @input="searchCities"
+                    />
+                    <button @click="searchCities" @click.stop.prevent>
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 14 14"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M13.8034 12.8197L11.208 10.2433C12.2154 8.9862 12.7033 7.39056 12.5713 5.78449C12.4393 4.17843 11.6974 2.68402 10.4983 1.60855C9.29906 0.533073 7.7337 -0.0417195 6.12404 0.00236006C4.51437 0.0464396 2.98276 0.70604 1.84413 1.84553C0.705504 2.98503 0.0464044 4.5178 0.00235827 6.12869C-0.0416878 7.73957 0.532668 9.30612 1.60733 10.5062C2.68198 11.7063 4.17526 12.4488 5.7801 12.5809C7.38495 12.713 8.97938 12.2247 10.2355 11.2165L12.81 13.7929C12.8751 13.8585 12.9524 13.9106 13.0377 13.9462C13.1229 13.9817 13.2144 14 13.3067 14C13.3991 14 13.4905 13.9817 13.5758 13.9462C13.661 13.9106 13.7384 13.8585 13.8034 13.7929C13.9295 13.6624 14 13.4879 14 13.3063C14 13.1248 13.9295 12.9503 13.8034 12.8197ZM6.31088 11.2165C5.34233 11.2165 4.39552 10.9291 3.5902 10.3905C2.78488 9.85204 2.15721 9.08664 1.78656 8.19113C1.41591 7.29563 1.31893 6.31024 1.50789 5.35957C1.69684 4.40891 2.16324 3.53567 2.84811 2.85028C3.53298 2.16489 4.40556 1.69813 5.3555 1.50903C6.30545 1.31993 7.29009 1.41699 8.18491 1.78792C9.07974 2.15885 9.84456 2.787 10.3827 3.59293C10.9208 4.39886 11.208 5.34638 11.208 6.31567C11.208 7.61545 10.692 8.86199 9.77364 9.78107C8.85526 10.7001 7.60967 11.2165 6.31088 11.2165Z"
+                          fill="#1D1F76"
+                        />
+                      </svg>
+                    </button>
+                  </label>
+                </div>
               </div>
               <div class="choice__body">
-                <Checkbox
-                  v-for="city in cities"
-                  :key="city.id"
-                  inputType="radio"
-                  :label="city.name"
-                  name="city-selection"
-                />
+                <div class="choice__body-inputs">
+                  <Checkbox
+                    v-for="city in filteredCities"
+                    :key="city.id"
+                    inputType="radio"
+                    :label="city.name"
+                    name="city-selection"
+                    :modelValue="
+                      selectedFilters.city &&
+                      selectedFilters.city.id === city.id
+                    "
+                    @update:modelValue="(value) => value && onCityChange(city)"
+                  />
+                </div>
+
+                <div class="choice__btn">
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    :disabled="!canApplyFilters"
+                    @click="applyFiltersFromTab"
+                    @click.stop.prevent
+                  >
+                    Применить
+                  </button>
+                </div>
               </div>
             </div>
             <!-- Расположение -->
@@ -186,6 +244,7 @@
                   switchFilterTab(0);
                   $event.stopPropagation();
                 "
+                @click.stop.prevent
               >
                 <div class="choice__title">
                   <span
@@ -207,16 +266,39 @@
                   </span>
                   Расположение
                 </div>
-                <div class="choice__close"></div>
+                <div
+                  class="choice__close"
+                  @click="switchFilterTab(0)"
+                  @click.stop.prevent
+                ></div>
               </div>
               <div class="choice__body">
-                <Checkbox
-                  v-for="site in site"
-                  :key="site.id"
-                  inputType="radio"
-                  :label="site.name"
-                  name="site-selection"
-                />
+                <div class="choice__body-inputs">
+                  <Checkbox
+                    v-for="site in site"
+                    :key="site.id"
+                    inputType="radio"
+                    :label="site.name"
+                    name="site-selection"
+                    :modelValue="
+                      selectedFilters.site &&
+                      selectedFilters.site.id === site.id
+                    "
+                    @update:modelValue="(value) => value && onSiteChange(site)"
+                  />
+                </div>
+
+                <div class="choice__btn">
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    :disabled="!canApplyFilters"
+                    @click="applyFiltersFromTab"
+                    @click.stop.prevent
+                  >
+                    Применить
+                  </button>
+                </div>
               </div>
             </div>
             <!-- Вид спорта -->
@@ -251,16 +333,40 @@
                   </span>
                   Вид спорта
                 </div>
-                <div class="choice__close"></div>
+                <div
+                  class="choice__close"
+                  @click="switchFilterTab(0)"
+                  @click.stop.prevent
+                ></div>
               </div>
               <div class="choice__body">
-                <Checkbox
-                  v-for="sportTypeItem in sportType"
-                  :key="sportTypeItem.id"
-                  inputType="checkbox"
-                  :label="sportTypeItem.name"
-                  name="sportType-selection"
-                />
+                <div class="choice__body-inputs">
+                  <Checkbox
+                    v-for="sportTypeItem in sportType"
+                    :key="sportTypeItem.id"
+                    inputType="checkbox"
+                    :label="sportTypeItem.name"
+                    name="sportType-selection"
+                    :modelValue="
+                      selectedFilters.sportType.includes(sportTypeItem.name)
+                    "
+                    @update:modelValue="
+                      (value) => onSportTypeChange(sportTypeItem.name, value)
+                    "
+                  />
+                </div>
+
+                <div class="choice__btn">
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    :disabled="!canApplyFilters"
+                    @click="applyFiltersFromTab"
+                    @click.stop.prevent
+                  >
+                    Применить
+                  </button>
+                </div>
               </div>
             </div>
             <!-- Тип карты -->
@@ -295,16 +401,40 @@
                   </span>
                   Тип карты
                 </div>
-                <div class="choice__close"></div>
+                <div
+                  class="choice__close"
+                  @click="switchFilterTab(0)"
+                  @click.stop.prevent
+                ></div>
               </div>
               <div class="choice__body">
-                <Checkbox
-                  v-for="cardTypeItem in cardType"
-                  :key="cardTypeItem.id"
-                  inputType="checkbox"
-                  :label="cardTypeItem.name"
-                  name="cardType-selection"
-                />
+                <div class="choice__body-inputs">
+                  <Checkbox
+                    v-for="cardTypeItem in cardType"
+                    :key="cardTypeItem.id"
+                    inputType="checkbox"
+                    :label="cardTypeItem.name"
+                    name="cardType-selection"
+                    :modelValue="
+                      selectedFilters.cardType.includes(cardTypeItem.name)
+                    "
+                    @update:modelValue="
+                      (value) => onCardTypeChange(cardTypeItem.name, value)
+                    "
+                  />
+                </div>
+
+                <div class="choice__btn">
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    :disabled="!canApplyFilters"
+                    @click="applyFiltersFromTab"
+                    @click.stop.prevent
+                  >
+                    Применить
+                  </button>
+                </div>
               </div>
             </div>
             <!-- Дополнительно -->
@@ -339,23 +469,57 @@
                   </span>
                   Дополнительно
                 </div>
-                <div class="choice__close"></div>
+                <div
+                  class="choice__close"
+                  @click="switchFilterTab(0)"
+                  @click.stop.prevent
+                ></div>
               </div>
               <div class="choice__body">
-                <Checkbox
-                  v-for="extraItem in extra"
-                  :key="extraItem.id"
-                  inputType="checkbox"
-                  :label="extraItem.name"
-                  name="extra-selection"
-                />
+                <div class="choice__body-inputs">
+                  <Checkbox
+                    v-for="extraItem in extra"
+                    :key="extraItem.id"
+                    inputType="checkbox"
+                    :label="extraItem.name"
+                    name="extra-selection"
+                    :modelValue="selectedFilters.extra.includes(extraItem.name)"
+                    @update:modelValue="
+                      (value) => onExtraChange(extraItem.name, value)
+                    "
+                  />
+                </div>
+
+                <div class="choice__btn">
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    :disabled="!canApplyFilters"
+                    @click="applyFiltersFromTab"
+                    @click.stop.prevent
+                  >
+                    Применить
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
           <div class="choice__btns">
-            <button class="btn btn-primary">Применить</button>
-            <button class="btn btn-transparent">
+            <button
+              class="btn btn-primary"
+              :disabled="!canApplyFilters"
+              @click="applyFilters"
+              @click.stop.prevent
+            >
+              Применить
+            </button>
+            <button
+              class="btn btn-transparent"
+              v-if="hasSelectedFilters"
+              @click="clearAllFilters"
+              @click.stop.prevent
+            >
               <span
                 ><svg
                   width="16"
@@ -442,11 +606,23 @@ export default {
         },
       ],
       activeFilterTab: 0, // Активный таб фильтра
+      isFilterOpen: false, // Состояние открытия фильтра
       cities: [], // Массив городов из demoCompany
       site: [],
       extra: [],
       cardType: [],
       sportType: [],
+      // Фильтры
+      selectedFilters: {
+        city: null,
+        site: null,
+        sportType: [],
+        cardType: [],
+        extra: [],
+      },
+      // Поиск городов
+      citySearchQuery: "",
+      filteredCities: [],
       // cards теперь управляется через setup
     };
   },
@@ -457,6 +633,7 @@ export default {
       name: city.cityName,
       id: city.cityName,
     }));
+    this.filteredCities = [...this.cities];
 
     // Инициализируем site из первого города
     this.site = demoCompany.cities[0].site.map((site) => ({
@@ -514,6 +691,53 @@ export default {
       name: item,
       id: item,
     }));
+
+    // Устанавливаем первый город как выбранный по умолчанию
+    if (this.cities.length > 0) {
+      this.selectedFilters.city = this.cities[0];
+    }
+  },
+  computed: {
+    // Количество выбранных фильтров для каждого типа
+    selectedFiltersCount() {
+      const counts = {};
+      this.filterItems.forEach((item, index) => {
+        switch (index) {
+          case 0: // Город
+            counts[item.id] = this.selectedFilters.city ? 1 : 0;
+            break;
+          case 1: // Расположение
+            counts[item.id] = this.selectedFilters.site ? 1 : 0;
+            break;
+          case 2: // Вид спорта
+            counts[item.id] = this.selectedFilters.sportType.length;
+            break;
+          case 3: // Тип карты
+            counts[item.id] = this.selectedFilters.cardType.length;
+            break;
+          case 4: // Дополнительно
+            counts[item.id] = this.selectedFilters.extra.length;
+            break;
+        }
+      });
+      return counts;
+    },
+
+    // Проверяем, есть ли выбранные фильтры
+    hasSelectedFilters() {
+      return (
+        this.selectedFilters.city ||
+        this.selectedFilters.site ||
+        this.selectedFilters.sportType.length > 0 ||
+        this.selectedFilters.cardType.length > 0 ||
+        this.selectedFilters.extra.length > 0
+      );
+    },
+
+    // Проверяем, можно ли активировать кнопку "Применить"
+    canApplyFilters() {
+      return this.selectedFilters.city !== null;
+    },
   },
   methods: {
     // Метод для переключения табов фильтра
@@ -533,6 +757,221 @@ export default {
           );
         });
       });
+    },
+
+    // Поиск городов
+    searchCities() {
+      if (!this.citySearchQuery.trim()) {
+        this.filteredCities = [...this.cities];
+        return;
+      }
+
+      const query = this.citySearchQuery.toLowerCase();
+      this.filteredCities = this.cities.filter((city) =>
+        city.name.toLowerCase().includes(query)
+      );
+    },
+
+    // Обработка изменения фильтра города
+    onCityChange(city) {
+      this.selectedFilters.city = city;
+      // Обновляем site для выбранного города
+      const selectedCity = demoCompany.cities.find(
+        (c) => c.cityName === city.name
+      );
+      if (selectedCity) {
+        this.site = selectedCity.site.map((site) => ({
+          name: site,
+          id: site,
+        }));
+        // Сбрасываем выбранное расположение при смене города
+        this.selectedFilters.site = null;
+      }
+    },
+
+    // Обработка изменения фильтра расположения
+    onSiteChange(site) {
+      this.selectedFilters.site = site;
+    },
+
+    // Обработка изменения фильтра вида спорта
+    onSportTypeChange(sportType, isChecked) {
+      if (isChecked) {
+        if (!this.selectedFilters.sportType.includes(sportType)) {
+          this.selectedFilters.sportType.push(sportType);
+        }
+      } else {
+        this.selectedFilters.sportType = this.selectedFilters.sportType.filter(
+          (item) => item !== sportType
+        );
+      }
+    },
+
+    // Обработка изменения фильтра типа карты
+    onCardTypeChange(cardType, isChecked) {
+      if (isChecked) {
+        if (!this.selectedFilters.cardType.includes(cardType)) {
+          this.selectedFilters.cardType.push(cardType);
+        }
+      } else {
+        this.selectedFilters.cardType = this.selectedFilters.cardType.filter(
+          (item) => item !== cardType
+        );
+      }
+    },
+
+    // Обработка изменения фильтра дополнительно
+    onExtraChange(extra, isChecked) {
+      if (isChecked) {
+        if (!this.selectedFilters.extra.includes(extra)) {
+          this.selectedFilters.extra.push(extra);
+        }
+      } else {
+        this.selectedFilters.extra = this.selectedFilters.extra.filter(
+          (item) => item !== extra
+        );
+      }
+    },
+
+    // Применение фильтров
+    applyFilters() {
+      if (!this.canApplyFilters) return;
+
+      // Фильтруем компании на основе выбранных фильтров
+      let filteredCompanies = [];
+
+      demoCompany.cities.forEach((city) => {
+        // Проверяем фильтр города
+        if (
+          this.selectedFilters.city &&
+          city.cityName !== this.selectedFilters.city.name
+        ) {
+          return;
+        }
+
+        city.company.forEach((company) => {
+          let shouldInclude = true;
+
+          // Проверяем фильтр расположения (site)
+          if (
+            this.selectedFilters.site &&
+            (!company.site ||
+              !company.site.includes(this.selectedFilters.site.name))
+          ) {
+            shouldInclude = false;
+          }
+
+          // Проверяем фильтр вида спорта
+          if (this.selectedFilters.sportType.length > 0) {
+            const hasMatchingSportType = this.selectedFilters.sportType.some(
+              (sportType) =>
+                company.sportType && company.sportType.includes(sportType)
+            );
+            if (!hasMatchingSportType) {
+              shouldInclude = false;
+            }
+          }
+
+          // Проверяем фильтр типа карты
+          if (this.selectedFilters.cardType.length > 0) {
+            const hasMatchingCardType = this.selectedFilters.cardType.some(
+              (cardType) =>
+                company.cardType && company.cardType.includes(cardType)
+            );
+            if (!hasMatchingCardType) {
+              shouldInclude = false;
+            }
+          }
+
+          // Проверяем фильтр дополнительно
+          if (this.selectedFilters.extra.length > 0) {
+            const hasMatchingExtra = this.selectedFilters.extra.some(
+              (extra) => company.extra && company.extra.includes(extra)
+            );
+            if (!hasMatchingExtra) {
+              shouldInclude = false;
+            }
+          }
+
+          if (shouldInclude) {
+            filteredCompanies.push({
+              ...company,
+              cityName: city.cityName,
+            });
+          }
+        });
+      });
+
+      // Обновляем данные на карте через setup функцию
+      this.$nextTick(() => {
+        if (this.updateMapWithFilteredData) {
+          this.updateMapWithFilteredData(filteredCompanies);
+        }
+      });
+
+      // Закрываем фильтр полностью
+      this.closeFilter();
+    },
+
+    // Применение фильтров из choice__btn (возврат на главный экран фильтра)
+    applyFiltersFromTab() {
+      // Просто возвращаемся на главный экран фильтра
+      this.activeFilterTab = 0;
+    },
+
+    // Очистка всех фильтров
+    clearAllFilters() {
+      this.selectedFilters = {
+        city: this.cities[0], // Оставляем первый город
+        site: null,
+        sportType: [],
+        cardType: [],
+        extra: [],
+      };
+
+      // Обновляем карту с исходными данными (все компании из первого города)
+      const allCompanies = demoCompany.cities[0].company.map(
+        (company, idx) => ({
+          ...company,
+          id: idx + 1,
+          cityName: demoCompany.cities[0].cityName,
+        })
+      );
+
+      this.$nextTick(() => {
+        if (this.updateMapWithFilteredData) {
+          this.updateMapWithFilteredData(allCompanies);
+        }
+      });
+
+      // Переходим на таб выбора города
+      this.activeFilterTab = 1;
+    },
+
+    // Закрытие фильтра
+    closeFilter() {
+      // Если сейчас открыт главный экран фильтра, то убираем active
+      if (this.activeFilterTab === 0) {
+        this.isFilterOpen = false;
+      } else {
+        this.activeFilterTab = 0;
+      }
+    },
+
+    // Открытие/закрытие фильтра
+    toggleFilter() {
+      this.isFilterOpen = !this.isFilterOpen;
+      if (!this.isFilterOpen) {
+        this.activeFilterTab = 0;
+      }
+    },
+
+    // Обновление карты с отфильтрованными данными
+    updateMapWithFilteredData(filteredCompanies) {
+      // Здесь будет логика обновления карты
+      // Пока просто логируем
+      console.log("Применены фильтры:", this.selectedFilters);
+      console.log("Отфильтрованные компании:", filteredCompanies);
     },
   },
   setup() {
@@ -557,6 +996,44 @@ export default {
 
     // Координаты Москвы
     const moscowCoords = [55.755819, 37.617644];
+
+    // Функция для обновления компаний на карте на основе фильтров
+    const updateCompaniesWithFilters = (filteredCompanies) => {
+      if (!mapInstance.value) return;
+
+      // Очищаем старые маркеры
+      companyMarkers.value.forEach((marker) => {
+        try {
+          mapInstance.value.geoObjects.remove(marker);
+        } catch (error) {
+          console.error("Ошибка удаления маркера:", error);
+        }
+      });
+      companyMarkers.value.clear();
+
+      // Обновляем companies с отфильтрованными данными
+      companies.value = filteredCompanies.map((company, idx) => ({
+        ...company,
+        id: idx + 1,
+        image: company.logo || null,
+        price: company.price || null,
+        rating: company.rating || null,
+        logo: company.logo || "/img/placeholder.jpg",
+        marker: company.marker || "/img/marker.png",
+      }));
+
+      // Добавляем новые маркеры
+      addCompanyMarkers();
+
+      // Обновляем слайдер
+      const newSliderData = initSliderData();
+      cards.value = newSliderData;
+    };
+
+    // Экспортируем функцию для использования в methods
+    const updateMapWithFilteredData = (filteredCompanies) => {
+      updateCompaniesWithFilters(filteredCompanies);
+    };
 
     // 1. Проверка устройства и геолокации
     const checkDeviceAndGeolocation = async () => {
@@ -1169,6 +1646,7 @@ export default {
       onSlideClick,
       onSlideChange,
       forceCenterOnMoscow,
+      updateMapWithFilteredData, // Экспортируем функцию для использования в methods
     };
   },
 };
@@ -1323,6 +1801,15 @@ export default {
   right: 0;
   bottom: 0;
   z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+
+  &.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
   &__overlay {
     position: fixed;
     top: 0;
@@ -1356,8 +1843,8 @@ export default {
   background-color: #fff;
   width: 100%;
   border-radius: 16px 16px 0 0;
-  padding: 20px;
-  max-height: 80vh;
+  // padding: 20px;
+  max-height: 90vh;
   overflow-y: auto;
   height: 100%;
   overflow: hidden;
@@ -1387,6 +1874,15 @@ export default {
     gap: 5px;
   }
   &__current {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--darkSecondary);
+    color: #fff;
+    text-align: center;
   }
 }
 .choice {
@@ -1397,10 +1893,24 @@ export default {
   &__blocks {
     flex-grow: 1;
   }
+  &__body {
+    height: calc(100% - 65px);
+    overflow-y: auto;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+  }
+  &__body-inputs {
+    flex-grow: 1;
+    margin-bottom: 20px;
+  }
+  &__btn {
+    margin-top: auto;
+  }
   &__block {
+    padding: 20px;
     &.choice-tab {
       height: 0;
-      padding: 0;
       overflow: hidden;
       position: absolute;
       opacity: 0;
@@ -1413,7 +1923,6 @@ export default {
         animation: slideIn 0.3s ease-out forwards;
         height: 100%;
         opacity: 1;
-        padding: 20px;
       }
     }
   }
@@ -1422,6 +1931,18 @@ export default {
     align-items: center;
     justify-content: space-between;
     margin-bottom: 24px;
+  }
+  &__head-searche {
+    display: grid;
+    justify-content: space-between;
+    grid-template-areas: "a b" "c c";
+    .choice-searche {
+      grid-area: c;
+      margin-top: 24px;
+    }
+    .choice__close {
+      margin-left: auto;
+    }
   }
   &__title {
     font-size: 26px;
@@ -1456,6 +1977,7 @@ export default {
     }
   }
   &__btns {
+    padding: 20px;
     margin-top: auto;
     .btn-transparent {
       display: flex;
@@ -1472,6 +1994,33 @@ export default {
         background-color: var(--darkSecondary);
       }
     }
+  }
+}
+.choice-tab {
+  &__city {
+    .choice__body {
+      height: calc(100% - 130px);
+    }
+  }
+}
+.choice-searche {
+  label {
+    position: relative;
+  }
+  input {
+    background-color: var(--lightSecondary);
+    width: 100%;
+    border-radius: 50px;
+    height: 40px;
+    line-height: 40px;
+    padding: 10px 40px 10px 20px;
+    text-overflow: ellipsis;
+  }
+  button {
+    padding: 0;
+    position: absolute;
+    right: 15px;
+    top: 5px;
   }
 }
 @keyframes slideIn {
