@@ -1037,7 +1037,9 @@ export default {
 
     // Функция для инициализации данных после загрузки из API
     const initializeData = (apiData) => {
-      if (!apiData || !apiData.cities) return;
+      if (!apiData || !apiData.cities) {
+        return;
+      }
 
       // Собираем все компании из всех городов
       const allCompanies = [];
@@ -1057,20 +1059,122 @@ export default {
       });
 
       companies.value = allCompanies;
+
+      // Добавляем маркеры на карту после загрузки данных
+      if (mapInstance.value && companies.value.length > 0) {
+        addCompanyMarkers();
+      }
     };
 
     // Функция для обновления компаний на карте на основе фильтров
     const updateCompaniesWithFilters = (filteredCompanies) => {
-      if (!mapInstance.value) return;
+      if (!mapInstance.value) {
+        return;
+      }
 
-      // Принудительно очищаем ВСЕ маркеры с карты
       mapInstance.value.geoObjects.removeAll();
-
-      // Очищаем Map с маркерами
       companyMarkers.value.clear();
 
-      // Обновляем companies с отфильтрованными данными
-      companies.value = filteredCompanies.map((company, idx) => ({
+      filteredCompanies.forEach((company, index) => {
+        try {
+          // Проверяем координаты
+          if (
+            !company.coordinates ||
+            !Array.isArray(company.coordinates) ||
+            company.coordinates.length !== 2
+          ) {
+            console.warn(
+              `Некорректные координаты для компании ${company.name}:`,
+              company.coordinates
+            );
+            return;
+          }
+
+          // Создаем кастомный HTML для маркера
+          const markerHtml = `
+            <div class="custom-marker" data-company-id="${company.id}">
+              <div class="custom-marker__content">
+                <div class="custom-marker__logo">
+                  <img src="${company.logo || "/img/placeholder.jpg"}" alt="${
+            company.name
+          }"/>
+                </div>
+                <div class="custom-marker__descr">
+                  <div class="custom-marker__info">
+                    <div class="custom-marker__name">${company.name}</div>
+                    <div class="custom-marker__rating">★ ${
+                      company.rating || "0"
+                    }</div>
+                </div>
+                  ${
+                    company.price
+                      ? `<div class="custom-marker__price">${company.price}</div>`
+                      : ""
+                  }
+                </div>
+                
+              </div>
+              <div class="marker-tail"></div>
+            </div>
+          `;
+
+          // Создаем простой кастомный макет
+          const CustomLayout =
+            window.ymaps.templateLayoutFactory.createClass(markerHtml);
+
+          // Создаем маркер с кастомным макетом
+          const placemark = new window.ymaps.Placemark(
+            company.coordinates,
+            {
+              // Данные для hint и balloon
+              hintContent: company.name,
+              balloonContent: `<div class="marker-balloon"><h3>${
+                company.name
+              }</h3><p>${company.address}</p><p>Рейтинг: ★ ${
+                company.rating || "0"
+              }</p><p>Цена: ${company.price || "Не указана"}</p></div>`,
+              // Сохраняем ID компании в данные метки для удобства
+              companyId: company.id,
+            },
+            {
+              iconLayout: "default#imageWithContent",
+              iconContentLayout: CustomLayout,
+              iconContentOffset: [0, 0],
+              iconContentSize: [150, 50],
+            }
+          );
+
+          // Добавляем обработчик клика на маркер
+          placemark.events.add("click", () => {
+            // Находим индекс компании в исходном массиве для слайдера
+            const companyIndex = companies.value.findIndex(
+              (c) => c.id === company.id
+            );
+            if (companyIndex !== -1) {
+              // Эмитируем событие свайпа слайдера
+              window.dispatchEvent(
+                new CustomEvent("map-marker-clicked", {
+                  detail: { companyId: company.id },
+                })
+              );
+            }
+          });
+
+          // Добавляем маркер на карту
+          mapInstance.value.geoObjects.add(placemark);
+
+          // Сохраняем ссылку на маркер в Map по ID компании
+          companyMarkers.value.set(company.id, placemark);
+        } catch (error) {
+          console.error(
+            `Ошибка создания маркера для компании ${company.name}:`,
+            error
+          );
+        }
+      });
+
+      // Обновляем слайдер с отфильтрованными данными
+      const newSliderData = filteredCompanies.map((company, idx) => ({
         ...company,
         id: idx + 1,
         image: company.logo || null,
@@ -1079,12 +1183,6 @@ export default {
         logo: company.logo || "/img/placeholder.jpg",
         marker: company.marker || "/img/marker.png",
       }));
-
-      // Добавляем новые маркеры
-      addCompanyMarkers();
-
-      // Обновляем слайдер
-      const newSliderData = initSliderData();
       cards.value = newSliderData;
     };
 
@@ -1175,8 +1273,23 @@ export default {
           autoFitToViewport: "always", // Автоматически подгонять под размер контейнера
         });
 
-        // Добавляем метки компаний
-        addCompanyMarkers();
+        // Добавляем тестовый маркер для проверки
+        const testPlacemark = new window.ymaps.Placemark(
+          moscowCoords,
+          {
+            hintContent: "Тестовый маркер",
+            balloonContent: "Это тестовый маркер",
+          },
+          {
+            preset: "islands#blueCircleDotIcon",
+          }
+        );
+        mapInstance.value.geoObjects.add(testPlacemark);
+
+        // Добавляем метки компаний только если данные уже загружены
+        if (companies.value.length > 0) {
+          addCompanyMarkers();
+        }
 
         // Проверяем что маркеры добавились и устанавливаем активный класс для первого маркера
         setTimeout(() => {
@@ -1214,11 +1327,6 @@ export default {
         } catch (error) {
           // Геолокация недоступна, карта остается на Москве
         }
-
-        console.log(
-          "Карта инициализирована, добавлено маркеров:",
-          companyMarkers.value.size
-        );
       } catch (error) {
         console.error("Ошибка инициализации карты:", error);
       }
@@ -1306,9 +1414,13 @@ export default {
 
     // 8. Добавление меток компаний
     const addCompanyMarkers = () => {
-      if (!mapInstance.value) return;
+      if (!mapInstance.value) {
+        return;
+      }
 
-      if (companies.value.length === 0) return;
+      if (companies.value.length === 0) {
+        return;
+      }
 
       companies.value.forEach((company, index) => {
         try {
@@ -1319,7 +1431,8 @@ export default {
             company.coordinates.length !== 2
           ) {
             console.warn(
-              `Некорректные координаты для компании ${company.name}`
+              `Некорректные координаты для компании ${company.name}:`,
+              company.coordinates
             );
             return;
           }
