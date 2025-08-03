@@ -816,6 +816,7 @@ export default {
     // Обработка изменения фильтра расположения
     onSiteChange(site) {
       this.selectedFilters.site = site;
+
       // Применяем фильтры автоматически
       this.applyFilters();
     },
@@ -940,6 +941,9 @@ export default {
           this.updateMapWithFilteredDataFromSetup(filteredCompanies);
         }
       });
+
+      // Центрируем карту на отфильтрованных маркерах
+      this.centerMapOnFilteredMarkers(filteredCompanies);
     },
 
     // Применение фильтров и закрытие фильтра
@@ -986,8 +990,8 @@ export default {
         }
       });
 
-      // Центрируем карту на первом городе
-      this.centerMapOnCity(this.cities[0]);
+      // Центрируем карту на всех маркерах
+      this.centerMapOnFilteredMarkers(allCompanies);
 
       // Переходим на таб выбора города
       this.activeFilterTab = 1;
@@ -1019,6 +1023,59 @@ export default {
           this.updateMapWithFilteredDataFromSetup(filteredCompanies);
         }
       });
+    },
+
+    // Центрирование карты на отфильтрованных маркерах
+    centerMapOnFilteredMarkers(filteredCompanies) {
+      if (
+        !this.mapInstance ||
+        !filteredCompanies ||
+        filteredCompanies.length === 0
+      )
+        return;
+
+      // Вычисляем границы для всех отфильтрованных компаний
+      let minLat = Infinity;
+      let maxLat = -Infinity;
+      let minLng = Infinity;
+      let maxLng = -Infinity;
+
+      filteredCompanies.forEach((company) => {
+        if (company.coordinates && company.coordinates.length === 2) {
+          const [lat, lng] = company.coordinates;
+          minLat = Math.min(minLat, lat);
+          maxLat = Math.max(maxLat, lat);
+          minLng = Math.min(minLng, lng);
+          maxLng = Math.max(maxLng, lng);
+        }
+      });
+
+      // Если есть валидные координаты
+      if (minLat !== Infinity && maxLat !== -Infinity) {
+        // Вычисляем центр всех маркеров
+        const centerLat = (minLat + maxLat) / 2;
+        const centerLng = (minLng + maxLng) / 2;
+
+        // Вычисляем подходящий zoom на основе размера области
+        const latDiff = maxLat - minLat;
+        const lngDiff = maxLng - minLng;
+        const maxDiff = Math.max(latDiff, lngDiff);
+
+        // Определяем zoom на основе размера области
+        let zoom = 12; // По умолчанию
+        if (maxDiff > 0.1) {
+          zoom = 10; // Большая область
+        } else if (maxDiff > 0.05) {
+          zoom = 11; // Средняя область
+        } else if (maxDiff > 0.02) {
+          zoom = 12; // Малая область
+        } else {
+          zoom = 13; // Очень малая область
+        }
+
+        // Центрируем карту на всех маркерах с подходящим zoom
+        this.mapInstance.setCenter([centerLat, centerLng], zoom);
+      }
     },
   },
   setup() {
@@ -1063,6 +1120,20 @@ export default {
       // Добавляем маркеры на карту после загрузки данных
       if (mapInstance.value && companies.value.length > 0) {
         addCompanyMarkers();
+
+        // Центрируем карту на всех маркерах после их добавления
+        setTimeout(() => {
+          if (companies.value.length > 0) {
+            const allCompaniesForCentering = companies.value.map((company) => ({
+              ...company,
+              cityName: company.cityName || "Москва",
+            }));
+            // Используем функцию центрирования из methods
+            if (window.centerMapOnFilteredMarkers) {
+              window.centerMapOnFilteredMarkers(allCompaniesForCentering);
+            }
+          }
+        }, 500);
       }
     };
 
@@ -1186,9 +1257,57 @@ export default {
       cards.value = newSliderData;
     };
 
-    // Экспортируем функцию для использования в methods
-    const updateMapWithFilteredData = (filteredCompanies) => {
-      updateCompaniesWithFilters(filteredCompanies);
+    // Функция для центрирования карты на отфильтрованных маркерах
+    const centerMapOnFilteredMarkers = (filteredCompanies) => {
+      if (
+        !mapInstance.value ||
+        !filteredCompanies ||
+        filteredCompanies.length === 0
+      )
+        return;
+
+      // Вычисляем границы для всех отфильтрованных компаний
+      let minLat = Infinity;
+      let maxLat = -Infinity;
+      let minLng = Infinity;
+      let maxLng = -Infinity;
+
+      filteredCompanies.forEach((company) => {
+        if (company.coordinates && company.coordinates.length === 2) {
+          const [lat, lng] = company.coordinates;
+          minLat = Math.min(minLat, lat);
+          maxLat = Math.max(maxLat, lat);
+          minLng = Math.min(minLng, lng);
+          maxLng = Math.max(maxLng, lng);
+        }
+      });
+
+      // Если есть валидные координаты
+      if (minLat !== Infinity && maxLat !== -Infinity) {
+        // Вычисляем центр всех маркеров
+        const centerLat = (minLat + maxLat) / 2;
+        const centerLng = (minLng + maxLng) / 2;
+
+        // Вычисляем подходящий zoom на основе размера области
+        const latDiff = maxLat - minLat;
+        const lngDiff = maxLng - minLng;
+        const maxDiff = Math.max(latDiff, lngDiff);
+
+        // Определяем zoom на основе размера области
+        let zoom = 12; // По умолчанию
+        if (maxDiff > 0.1) {
+          zoom = 10; // Большая область
+        } else if (maxDiff > 0.05) {
+          zoom = 11; // Средняя область
+        } else if (maxDiff > 0.02) {
+          zoom = 12; // Малая область
+        } else {
+          zoom = 13; // Очень малая область
+        }
+
+        // Центрируем карту на всех маркерах с подходящим zoom
+        mapInstance.value.setCenter([centerLat, centerLng], zoom);
+      }
     };
 
     // 1. Проверка устройства и геолокации
@@ -1289,6 +1408,20 @@ export default {
         // Добавляем метки компаний только если данные уже загружены
         if (companies.value.length > 0) {
           addCompanyMarkers();
+
+          // Центрируем карту на всех маркерах после их добавления
+          setTimeout(() => {
+            if (companies.value.length > 0) {
+              const allCompanies = companies.value.map((company) => ({
+                ...company,
+                cityName: company.cityName || "Москва",
+              }));
+              // Используем функцию центрирования из methods
+              if (window.centerMapOnFilteredMarkers) {
+                window.centerMapOnFilteredMarkers(allCompanies);
+              }
+            }
+          }, 500);
         }
 
         // Проверяем что маркеры добавились и устанавливаем активный класс для первого маркера
@@ -1794,6 +1927,7 @@ export default {
       mapInstance, // Экспортируем mapInstance для использования в methods
       initializeData, // Экспортируем функцию инициализации данных
       updateMapWithFilteredDataFromSetup: updateCompaniesWithFilters, // Экспортируем функцию для использования в methods
+      centerMapOnFilteredMarkersFromSetup: centerMapOnFilteredMarkers, // Экспортируем функцию центрирования
     };
   },
 

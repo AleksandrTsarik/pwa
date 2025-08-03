@@ -4,7 +4,7 @@ const DEMO_DATA = {
     {
       cityName: "Москва",
       cityLocaltion: [55.755864, 37.617698],
-      site: ['1','2','3','4','5','6','7','8','9',],
+      site: ['Центр','Дмитровка','Останкино','Лефортово','Перово','Вешняки','Сукино болото','Юго-запад','Юго-восток','Север','Юг','Запад','Восток'],
       company: [
         {
           name: "DDX Fitness",
@@ -41,6 +41,7 @@ const DEMO_DATA = {
           ],
           cardType: ["gold", "silver"],
           sportType: ["плавание", "бег", "тренажерный зал", "кроссфит"],
+          site: ["Центр"],
         },
         {
           name: "DDX Fitness",
@@ -67,6 +68,7 @@ const DEMO_DATA = {
           ],
           cardType: ["gold", "silver"],
           sportType: ["бег", "тренажерный зал", "кроссфит"],
+          site: ["Центр"],
         },
         {
           name: "DDX Fitness",
@@ -85,6 +87,7 @@ const DEMO_DATA = {
           tags: ["Фитнес клуб", "Бассейн", "Аэробика", "Йога", "+20 занятий"],
           cardType: ["gold", "silver", "black"],
           sportType: ["плавание", "бег", "тренажерный зал", "кроссфит"],
+          site: ["Север"],
         },
         {
           name: "DDX Fitness",
@@ -111,6 +114,7 @@ const DEMO_DATA = {
           ],
           cardType: ["gold"],
           sportType: ["тренажерный зал"],
+          site: ["Юго-восток"],
         },
         {
           name: "Xfit",
@@ -137,6 +141,7 @@ const DEMO_DATA = {
           ],
           cardType: ["black"],
           sportType: ["плавание", "бег", "тренажерный зал", "кроссфит"],
+          site: ["Север"],
         },
         {
           name: "Xfit",
@@ -163,6 +168,7 @@ const DEMO_DATA = {
           ],
           cardType: ["black"],
           sportType: ["плавание", "бег", "тренажерный зал", "кроссфит"],
+          site: ["Север"],
         },
         {
           name: "Xfit",
@@ -189,13 +195,14 @@ const DEMO_DATA = {
           ],
           cardType: ["gold"],
           sportType: ["тренажерный зал"],
+          site: ["Центр"],
         },
       ],
     },
     {
       cityName: "Санкт-Петербург",
       cityLocaltion: [59.938784, 30.314997],
-      site: ['1','2','3','4','5','6','7','8','9',],
+      site: ['Центральный','Невский','Фруннзенский','Пушкинский','Кировский','Московский','Адмералтейский','Петроградский','Курортный',],
       company: [
         {
           name: "DDX Fitness",
@@ -232,6 +239,7 @@ const DEMO_DATA = {
           ],
           cardType: ["silver",],
           sportType: ["плавание", "бег", "тренажерный зал", "кроссфит"],
+          site: ["Центральный"],
         },
         {
           name: "DDX Fitness",
@@ -266,6 +274,7 @@ const DEMO_DATA = {
           ],
           cardType: ["black"],
           sportType: ["плавание", "бег", "тренажерный зал"],
+          site: ["Московский"],
         },
       ],
     },
