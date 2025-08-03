@@ -509,7 +509,7 @@
             <button
               class="btn btn-primary"
               :disabled="!canApplyFilters"
-              @click="applyFilters"
+              @click="applyFiltersAndClose"
               @click.stop.prevent
             >
               Применить
@@ -742,21 +742,7 @@ export default {
   methods: {
     // Метод для переключения табов фильтра
     switchFilterTab(tabIndex) {
-      console.log("switchFilterTab вызван с индексом:", tabIndex);
       this.activeFilterTab = tabIndex;
-      console.log("activeFilterTab установлен в:", tabIndex);
-
-      // Проверяем, что происходит с классами
-      this.$nextTick(() => {
-        const tabs = document.querySelectorAll(".choice__block");
-        tabs.forEach((tab, index) => {
-          console.log(
-            `Таб ${index}:`,
-            tab.classList.contains("active"),
-            tab.className
-          );
-        });
-      });
     },
 
     // Поиск городов
@@ -787,11 +773,32 @@ export default {
         // Сбрасываем выбранное расположение при смене города
         this.selectedFilters.site = null;
       }
+
+      // Центрируем карту на выбранном городе
+      this.centerMapOnCity(city);
+
+      // Применяем фильтры автоматически
+      this.applyFilters();
+    },
+
+    // Центрирование карты на выбранном городе
+    centerMapOnCity(city) {
+      const selectedCity = demoCompany.cities.find(
+        (c) => c.cityName === city.name
+      );
+      if (selectedCity && selectedCity.cityLocaltion) {
+        // Центрируем карту на координатах города
+        if (this.mapInstance) {
+          this.mapInstance.setCenter(selectedCity.cityLocaltion, 12);
+        }
+      }
     },
 
     // Обработка изменения фильтра расположения
     onSiteChange(site) {
       this.selectedFilters.site = site;
+      // Применяем фильтры автоматически
+      this.applyFilters();
     },
 
     // Обработка изменения фильтра вида спорта
@@ -805,6 +812,8 @@ export default {
           (item) => item !== sportType
         );
       }
+      // Применяем фильтры автоматически
+      this.applyFilters();
     },
 
     // Обработка изменения фильтра типа карты
@@ -818,6 +827,8 @@ export default {
           (item) => item !== cardType
         );
       }
+      // Применяем фильтры автоматически
+      this.applyFilters();
     },
 
     // Обработка изменения фильтра дополнительно
@@ -831,6 +842,8 @@ export default {
           (item) => item !== extra
         );
       }
+      // Применяем фильтры автоматически
+      this.applyFilters();
     },
 
     // Применение фильтров
@@ -904,18 +917,23 @@ export default {
 
       // Обновляем данные на карте через setup функцию
       this.$nextTick(() => {
-        if (this.updateMapWithFilteredData) {
-          this.updateMapWithFilteredData(filteredCompanies);
+        if (this.updateMapWithFilteredDataFromSetup) {
+          this.updateMapWithFilteredDataFromSetup(filteredCompanies);
         }
       });
+    },
 
-      // Закрываем фильтр полностью
+    // Применение фильтров и закрытие фильтра
+    applyFiltersAndClose() {
+      this.applyFilters();
       this.closeFilter();
     },
 
     // Применение фильтров из choice__btn (возврат на главный экран фильтра)
     applyFiltersFromTab() {
-      // Просто возвращаемся на главный экран фильтра
+      // Применяем фильтры перед возвратом на главный экран
+      this.applyFilters();
+      // Возвращаемся на главный экран фильтра
       this.activeFilterTab = 0;
     },
 
@@ -929,20 +947,26 @@ export default {
         extra: [],
       };
 
-      // Обновляем карту с исходными данными (все компании из первого города)
-      const allCompanies = demoCompany.cities[0].company.map(
-        (company, idx) => ({
-          ...company,
-          id: idx + 1,
-          cityName: demoCompany.cities[0].cityName,
-        })
-      );
+      // Обновляем карту со всеми компаниями из всех городов
+      const allCompanies = [];
+      demoCompany.cities.forEach((city) => {
+        city.company.forEach((company) => {
+          allCompanies.push({
+            ...company,
+            cityName: city.cityName,
+          });
+        });
+      });
 
+      // Обновляем данные на карте через setup функцию
       this.$nextTick(() => {
-        if (this.updateMapWithFilteredData) {
-          this.updateMapWithFilteredData(allCompanies);
+        if (this.updateMapWithFilteredDataFromSetup) {
+          this.updateMapWithFilteredDataFromSetup(allCompanies);
         }
       });
+
+      // Центрируем карту на первом городе
+      this.centerMapOnCity(this.cities[0]);
 
       // Переходим на таб выбора города
       this.activeFilterTab = 1;
@@ -968,24 +992,33 @@ export default {
 
     // Обновление карты с отфильтрованными данными
     updateMapWithFilteredData(filteredCompanies) {
-      // Здесь будет логика обновления карты
-      // Пока просто логируем
-      console.log("Применены фильтры:", this.selectedFilters);
-      console.log("Отфильтрованные компании:", filteredCompanies);
+      // Вызываем функцию из setup для обновления карты
+      this.$nextTick(() => {
+        if (this.updateMapWithFilteredDataFromSetup) {
+          this.updateMapWithFilteredDataFromSetup(filteredCompanies);
+        }
+      });
     },
   },
   setup() {
-    const companies = ref(
-      demoCompany.cities[0].company.map((c, idx) => ({
-        ...c,
-        id: idx + 1,
-        image: c.logo || null,
-        price: c.price || null,
-        rating: c.rating || null,
-        logo: c.logo || "/img/placeholder.jpg",
-        marker: c.marker || "/img/marker.png",
-      }))
-    );
+    // Инициализируем companies со всеми компаниями из всех городов
+    const allCompanies = [];
+    demoCompany.cities.forEach((city, cityIndex) => {
+      city.company.forEach((company, companyIndex) => {
+        allCompanies.push({
+          ...company,
+          id: allCompanies.length + 1,
+          image: company.logo || null,
+          price: company.price || null,
+          rating: company.rating || null,
+          logo: company.logo || "/img/placeholder.jpg",
+          marker: company.marker || "/img/marker.png",
+          cityName: city.cityName,
+        });
+      });
+    });
+
+    const companies = ref(allCompanies);
     const cards = ref([]); // Добавляем ref для cards
     const selectedCompany = ref(null);
     const mapInstance = shallowRef(null);
@@ -1260,20 +1293,16 @@ export default {
 
     // 8. Добавление меток компаний
     const addCompanyMarkers = () => {
-      if (!mapInstance.value) {
-        return;
-      }
+      if (!mapInstance.value) return;
 
-      if (companies.value.length === 0) {
-        return;
-      }
+      if (companies.value.length === 0) return;
 
       // Очищаем старые маркеры перед добавлением новых
       companyMarkers.value.forEach((marker) => {
         try {
           mapInstance.value.geoObjects.remove(marker);
         } catch (error) {
-          // Ошибка удаления старого маркера
+          console.error("Ошибка удаления старого маркера:", error);
         }
       });
       companyMarkers.value.clear();
@@ -1646,7 +1675,8 @@ export default {
       onSlideClick,
       onSlideChange,
       forceCenterOnMoscow,
-      updateMapWithFilteredData, // Экспортируем функцию для использования в methods
+      mapInstance, // Экспортируем mapInstance для использования в methods
+      updateMapWithFilteredDataFromSetup: updateMapWithFilteredData, // Экспортируем функцию для использования в methods
     };
   },
 };

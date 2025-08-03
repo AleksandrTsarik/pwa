@@ -144,6 +144,7 @@ export default {
     slider: { type: Array, default: () => [], required: false },
     options: { type: Object, default: () => ({}), required: false },
     typeSlider: { type: String, default: "", required: false },
+    class: { type: String, default: "", required: false },
   },
   mounted() {
     console.log(this.options);

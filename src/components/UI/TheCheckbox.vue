@@ -1,8 +1,8 @@
 <template>
   <label class="default-checkbox" v-if="inputType === 'checkbox'">
     <input
-      v-model.lazy="isCheck"
-      :value="value"
+      :checked="modelValue"
+      @change="handleChange"
       type="checkbox"
       class="default-checkbox__input"
     />
@@ -16,8 +16,8 @@
 
   <label class="default-radio" v-else-if="inputType === 'radio'">
     <input
-      v-model.lazy="isCheck"
-      :value="value"
+      :checked="modelValue"
+      @change="handleChange"
       type="radio"
       class="default-radio__input"
       :name="name"
@@ -38,10 +38,6 @@ export default {
       type: Boolean,
       default: false,
     },
-    // size: { // Не используется в шаблоне, можно удалить или использовать
-    //   type: String,
-    //   default: "",
-    // },
     inputType: {
       type: String,
       required: true,
@@ -61,25 +57,11 @@ export default {
     },
   },
   emits: ["update:modelValue"],
-  data() {
-    return {
-      localChecked: this.modelValue,
-    };
-  },
-  computed: {
-    isCheck: {
-      get() {
-        return this.localChecked;
-      },
-      set(val) {
-        this.localChecked = val;
-        this.$emit("update:modelValue", val);
-      },
-    },
-  },
-  watch: {
-    modelValue(newVal) {
-      this.localChecked = newVal;
+  methods: {
+    handleChange(event) {
+      const checked = event.target.checked;
+      console.log("Checkbox change:", this.label, "checked:", checked);
+      this.$emit("update:modelValue", checked);
     },
   },
 };
