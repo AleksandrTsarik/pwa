@@ -1034,8 +1034,6 @@ export default {
     const updateCompaniesWithFilters = (filteredCompanies) => {
       if (!mapInstance.value) return;
 
-      console.log("Обновляем карту с", filteredCompanies.length, "компаниями");
-
       // Принудительно очищаем ВСЕ маркеры с карты
       mapInstance.value.geoObjects.removeAll();
 
@@ -1059,11 +1057,6 @@ export default {
       // Обновляем слайдер
       const newSliderData = initSliderData();
       cards.value = newSliderData;
-
-      console.log(
-        "Карта обновлена, добавлено маркеров:",
-        companyMarkers.value.size
-      );
     };
 
     // Экспортируем функцию для использования в methods
@@ -1305,8 +1298,6 @@ export default {
 
       if (companies.value.length === 0) return;
 
-      console.log("Добавляем маркеры для", companies.value.length, "компаний");
-
       companies.value.forEach((company, index) => {
         try {
           // Проверяем координаты
@@ -1399,8 +1390,6 @@ export default {
 
           // Сохраняем ссылку на маркер в Map по ID компании
           companyMarkers.value.set(company.id, placemark);
-
-          console.log(`Добавлен маркер для компании ${company.name}`);
         } catch (error) {
           console.error(
             `Ошибка создания маркера для компании ${company.name}:`,
@@ -1408,8 +1397,6 @@ export default {
           );
         }
       });
-
-      console.log(`Всего добавлено маркеров: ${companyMarkers.value.size}`);
     };
 
     // 9. Принудительное центрирование на Москве (только ручное)
