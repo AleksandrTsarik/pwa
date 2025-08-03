@@ -1034,14 +1034,12 @@ export default {
     const updateCompaniesWithFilters = (filteredCompanies) => {
       if (!mapInstance.value) return;
 
-      // Очищаем старые маркеры
-      companyMarkers.value.forEach((marker) => {
-        try {
-          mapInstance.value.geoObjects.remove(marker);
-        } catch (error) {
-          console.error("Ошибка удаления маркера:", error);
-        }
-      });
+      console.log("Обновляем карту с", filteredCompanies.length, "компаниями");
+
+      // Принудительно очищаем ВСЕ маркеры с карты
+      mapInstance.value.geoObjects.removeAll();
+
+      // Очищаем Map с маркерами
       companyMarkers.value.clear();
 
       // Обновляем companies с отфильтрованными данными
@@ -1061,6 +1059,11 @@ export default {
       // Обновляем слайдер
       const newSliderData = initSliderData();
       cards.value = newSliderData;
+
+      console.log(
+        "Карта обновлена, добавлено маркеров:",
+        companyMarkers.value.size
+      );
     };
 
     // Экспортируем функцию для использования в methods
@@ -1206,8 +1209,13 @@ export default {
         } catch (error) {
           // Геолокация недоступна, карта остается на Москве
         }
+
+        console.log(
+          "Карта инициализирована, добавлено маркеров:",
+          companyMarkers.value.size
+        );
       } catch (error) {
-        // Ошибка инициализации карты
+        console.error("Ошибка инициализации карты:", error);
       }
     };
 
@@ -1297,15 +1305,7 @@ export default {
 
       if (companies.value.length === 0) return;
 
-      // Очищаем старые маркеры перед добавлением новых
-      companyMarkers.value.forEach((marker) => {
-        try {
-          mapInstance.value.geoObjects.remove(marker);
-        } catch (error) {
-          console.error("Ошибка удаления старого маркера:", error);
-        }
-      });
-      companyMarkers.value.clear();
+      console.log("Добавляем маркеры для", companies.value.length, "компаний");
 
       companies.value.forEach((company, index) => {
         try {
@@ -1399,6 +1399,8 @@ export default {
 
           // Сохраняем ссылку на маркер в Map по ID компании
           companyMarkers.value.set(company.id, placemark);
+
+          console.log(`Добавлен маркер для компании ${company.name}`);
         } catch (error) {
           console.error(
             `Ошибка создания маркера для компании ${company.name}:`,
@@ -1406,6 +1408,8 @@ export default {
           );
         }
       });
+
+      console.log(`Всего добавлено маркеров: ${companyMarkers.value.size}`);
     };
 
     // 9. Принудительное центрирование на Москве (только ручное)

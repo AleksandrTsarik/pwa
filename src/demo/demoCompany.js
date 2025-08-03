@@ -38,7 +38,7 @@ export default {
             "Есть парковка",
             "Душ",
           ],
-          cardType: ["gold", "silver", "black"],
+          cardType: ["gold", "silver"],
           sportType: ["плавание", "бег", "тренажерный зал", "кроссфит"],
         },
         {
