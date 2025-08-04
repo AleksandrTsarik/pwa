@@ -1735,7 +1735,7 @@ export default {
             }
           }
 
-          // Логируем все маркеры, которые попадают на экран
+          // Логирование всех маркеров, которые попадают на экран
           const bounds = mapInstance.value.getBounds();
           const visibleMarkers = [];
           companyMarkers.value.forEach((marker) => {
@@ -1750,16 +1750,15 @@ export default {
             }
           });
 
-          // Логируем HTML-код видимых маркеров
         } catch (error) {
           // Ошибка обработки свайпа слайдера
         }
       }
     };
 
-    // Инициализация слайдера с данными из demoCompany
+    // Слайдер с данными из demoCompany
     const initSliderData = () => {
-      // Показываем все компании изначально
+      // Все компании изначально
       const sliderData = companies.value.map((company, index) => {
         const slideData = {
           img: company.logo || "/img/placeholder.jpg",
@@ -1790,7 +1789,7 @@ export default {
     const updateCompaniesInView = () => {
       if (!mapInstance.value) return;
 
-      // Добавляем дебаунсинг для предотвращения частых обновлений
+      // Дебаунсинг для предотвращения частых обновлений
       if (updateTimeout) {
         clearTimeout(updateTimeout);
       }
@@ -1810,7 +1809,7 @@ export default {
 
           companiesInView.value = filtered;
 
-          // Обновляем слайдер только компаниями в зоне видимости
+          // Обновление слайдер только компаниями в зоне видимости
           const newSliderData = filtered.map((company) => ({
             img: company.logo || "/img/placeholder.jpg",
             name: company.name,
@@ -1842,7 +1841,7 @@ export default {
       }, 200); // Задержка 200мс для дебаунсинга
     };
 
-    // Функция выбора компании
+    // Выбора компании
     const selectCompany = (company) => {
       selectedCompany.value = company;
     };
@@ -1870,7 +1869,7 @@ export default {
         };
 
         script.onerror = (error) => {
-          // Попробуем альтернативный способ загрузки
+          // Альтернативный способ загрузки
           setTimeout(() => {
             if (window.ymaps) {
               window.ymaps.ready(() => {
@@ -1882,7 +1881,7 @@ export default {
           }, 2000);
         };
 
-        // Добавляем обработчик для отслеживания блокировки
+        // Обработчик для отслеживания блокировки
         script.addEventListener("error", (event) => {
           // Скрипт заблокирован
         });
