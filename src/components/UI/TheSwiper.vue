@@ -383,6 +383,7 @@ export default {
   .slider {
     margin: 0 auto 0;
     transform: translateY(-110px);
+    margin-bottom: -100px;
     max-width: 220px;
     &__head {
       margin: 0 auto;
