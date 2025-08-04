@@ -141,20 +141,21 @@ export default {
   input {
     width: 100%;
     font-size: 16px;
-
     border: solid 1px transparent;
     border-radius: 50px;
     background: #e5f0ff;
     outline: none;
     height: 56px;
-    transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 15px 20px;
+
     &.is-focused,
     &.not-empty {
       background: #fff;
       border-color: var(--darkSecondary);
       padding: 15px 20px 5px;
     }
+
     &:disabled {
       background-color: var(--gray);
       & + .input-field__name {
@@ -185,11 +186,14 @@ export default {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     background: #e5f0ff;
     padding: 0 4px;
+    transform: translateY(0);
+
     &.active {
       top: 4px;
       font-size: 12px;
       color: rgba(78, 94, 107, 1);
       background: none;
+      transform: translateY(0);
     }
   }
 
