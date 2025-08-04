@@ -112,7 +112,31 @@
         </div>
       </div>
 
-      <div class="slider" v-if="typeSlider === 'code'"></div>
+      <div class="slider" v-if="typeSlider === 'code'">
+        <div class="slider__wrap">
+          <div class="slider__head">
+            <div class="slider__photo">
+              <img :src="slide.photo" alt="" />
+            </div>
+            <div class="slider__name">
+              <p>{{ slide.name }}</p>
+              <p>{{ slide.lastName }}</p>
+            </div>
+          </div>
+          <div class="slider__body">
+            <img :src="slide.qrCode" alt="" />
+          </div>
+          <div class="slider__footer">
+            <div class="slider__info">
+              <div class="slider__text">Срок действия QR-кода</div>
+              <div class="slider__time">{{ slide.qrCodeTime }}</div>
+            </div>
+            <div class="slider__send">
+              <button class="btn btn-primary">Создать новый</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </SwiperSlide>
   </Swiper>
 </template>
@@ -350,5 +374,138 @@ export default {
   .swiper-pagination-bullets-dynamic {
   }
   // swiper-pagination swiper-pagination-clickable swiper-pagination-bullets swiper-pagination-horizontal swiper-pagination-bullets-dynamic
+}
+
+.slider-code {
+  padding-top: 20px;
+  overflow: visible;
+
+  .slider {
+    margin: 0 auto 0;
+    transform: translateY(-110px);
+    max-width: 220px;
+    &__head {
+      margin: 0 auto;
+      text-align: center;
+    }
+    &__body {
+      text-align: center;
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+    &__footer {
+    }
+    &__photo {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: solid 2px #fff;
+      background-color: #dedede;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      margin: 0 auto 10px;
+      img {
+      }
+    }
+    &__name {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 500;
+      font-family: var(--stetica);
+      margin-bottom: 50px;
+    }
+    &__info {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+      gap: 10px;
+    }
+    &__text {
+      font-size: 14px;
+      font-weight: 500;
+      font-family: var(--ff);
+    }
+    &__time {
+      white-space: nowrap;
+      font-size: 24px;
+      font-weight: 500;
+      font-family: var(--stetica);
+      margin-top: -5px;
+      margin-bottom: 4px;
+    }
+  }
+  .swiper-pagination {
+    top: 90px;
+    z-index: 0;
+  }
+  .swiper-pagination-bullets {
+    display: flex;
+    justify-content: center;
+  }
+
+  .swiper-pagination-bullet {
+    background-color: rgba(255, 211, 126, 1);
+    width: 6px;
+    height: 6px;
+    flex: 0 0 6px;
+    margin: 0 2px !important;
+    position: relative;
+    display: block;
+    margin: 0 auto;
+
+    &.swiper-pagination-bullet-active {
+      background-color: var(--primary);
+      position: relative;
+      width: 33px !important;
+      flex: 0 0 33px !important;
+      border-radius: 50px;
+    }
+
+    // &.swiper-pagination-bullet-active-next {
+    //   width: 6px;
+    //   height: 6px;
+    //   flex: 0 0 6px;
+    //   opacity: 1;
+    //   transform: scale(1);
+    //   background-color: rgba(229, 229, 229, 1);
+    // }
+
+    // &.swiper-pagination-bullet-active-prev {
+    //   width: 6px;
+    //   height: 6px;
+    //   flex: 0 0 6px;
+    //   opacity: 1;
+    //   transform: scale(1);
+    //   background-color: rgba(229, 229, 229, 1);
+    // }
+  }
+  .swiper-button-next,
+  .swiper-button-prev {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    background-color: rgba(255, 241, 215, 1);
+    top: -27px;
+    &::after {
+      color: rgba(29, 29, 29, 1);
+      font-size: 20px;
+      font-weight: 700;
+    }
+  }
+  .swiper-button-next {
+  }
+  .swiper-button-prev {
+  }
 }
 </style>

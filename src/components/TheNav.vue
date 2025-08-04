@@ -158,6 +158,7 @@ export default {
   background-position: 50% 50%;
   background-color: transparent;
   height: 60px;
+  z-index: 9999;
   ul {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
